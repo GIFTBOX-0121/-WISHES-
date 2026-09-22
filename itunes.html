@@ -3,13 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>iTunes Gift</title>
+
+  <title>iTunes</title>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
     body {
-      font-family: sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
       background: #f7f7f7;
       margin: 0;
       padding: 30px 15px;
@@ -21,9 +22,31 @@
       margin: 0 auto;
     }
 
-    h1 {
+    header {
       text-align: center;
-      margin-bottom: 30px;
+      margin-bottom: 25px;
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: 28px;
+    }
+
+    .counter {
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+
+    .time {
+      font-size: 12px;
+      color: #999;
+      margin-bottom: 3px;
+    }
+
+    .total {
+      font-size: 13px;
+      color: #777;
     }
 
     .gift-card {
@@ -84,18 +107,18 @@
       padding: 10px;
     }
 
+    .already-taken {
+      text-align: center;
+      color: #999;
+      padding: 10px;
+    }
+
     .error {
       text-align: center;
       color: #d00;
       background: white;
       padding: 15px;
       border-radius: 10px;
-    }
-
-    .already-taken {
-      text-align: center;
-      color: #999;
-      padding: 10px;
     }
 
     .back {
@@ -112,7 +135,21 @@
 
   <div class="container">
 
-    <h1>iTunes Gift</h1>
+    <header>
+      <h1>iTunes</h1>
+
+      <div class="counter" id="counter">
+        未受け取り🎁0件
+      </div>
+
+      <div class="time" id="update-time">
+        9月22日 00:00時点
+      </div>
+
+      <div class="total" id="total">
+        Total：0件
+      </div>
+    </header>
 
     <div id="gift-list"></div>
 
@@ -141,12 +178,40 @@
     const giftList =
       document.getElementById("gift-list");
 
+    const counter =
+      document.getElementById("counter");
+
+    const updateTime =
+      document.getElementById("update-time");
+
+    const total =
+      document.getElementById("total");
+
+
+    function updateTimeDisplay() {
+
+      const now = new Date();
+
+      const month =
+        now.getMonth() + 1;
+
+      const day =
+        now.getDate();
+
+      const hours =
+        String(now.getHours()).padStart(2, "0");
+
+      const minutes =
+        String(now.getMinutes()).padStart(2, "0");
+
+
+      updateTime.textContent =
+        `${month}月${day}日 ${hours}:${minutes}時点`;
+
+    }
+
 
     async function loadGifts() {
-
-      giftList.innerHTML =
-        "<p style='text-align:center;'>読み込み中...</p>";
-
 
       try {
 
@@ -164,22 +229,7 @@
 
           giftList.innerHTML = `
             <div class="error">
-              Giftを読み込めませんでした。<br><br>
-              ${error.message}
-            </div>
-          `;
-
-          return;
-        }
-
-
-        if (!gifts || gifts.length === 0) {
-
-          giftList.innerHTML = `
-            <div class="gift-card">
-              <div style="text-align:center;">
-                iTunes Giftはまだありません。
-              </div>
+              Giftを読み込めませんでした。
             </div>
           `;
 
@@ -199,8 +249,7 @@
 
           giftList.innerHTML = `
             <div class="error">
-              受け取り情報を読み込めませんでした。<br><br>
-              ${receiptError.message}
+              受け取り情報を読み込めませんでした。
             </div>
           `;
 
@@ -216,15 +265,76 @@
           );
 
 
+        const totalCount =
+          gifts.length;
+
+        const receivedCount =
+          gifts.filter(
+            gift => receivedIds.has(gift.id)
+          ).length;
+
+        const unreceivedCount =
+          totalCount - receivedCount;
+
+
+        counter.textContent =
+          `未受け取り🎁${unreceivedCount}件`;
+
+        total.textContent =
+          `Total：${totalCount}件`;
+
+        updateTimeDisplay();
+
+
+        /*
+          未受け取りを上、
+          受け取り済みを下にする
+        */
+
+        const sortedGifts =
+          [...gifts].sort((a, b) => {
+
+            const aReceived =
+              receivedIds.has(a.id);
+
+            const bReceived =
+              receivedIds.has(b.id);
+
+
+            if (aReceived === bReceived) {
+              return a.id - b.id;
+            }
+
+
+            return aReceived ? 1 : -1;
+
+          });
+
+
         giftList.innerHTML = "";
 
 
-        gifts.forEach(gift => {
+        if (sortedGifts.length === 0) {
+
+          giftList.innerHTML = `
+            <div class="gift-card">
+              <div style="text-align:center;">
+                現在Giftはありません。
+              </div>
+            </div>
+          `;
+
+          return;
+        }
+
+
+        sortedGifts.forEach(gift => {
 
           const card =
             document.createElement("div");
 
-          card.className = "gift-card";
+          card.className =
+            "gift-card";
 
 
           if (receivedIds.has(gift.id)) {
@@ -245,7 +355,9 @@
 
 
             const button =
-              card.querySelector(".receive-button");
+              card.querySelector(
+                ".receive-button"
+              );
 
 
             button.addEventListener(
@@ -257,6 +369,11 @@
                 button.textContent =
                   "受け取り中...";
 
+
+                /*
+                  ここで初めて
+                  Giftを確保する
+                */
 
                 const { error } =
                   await client
@@ -273,7 +390,14 @@
                   console.error(error);
 
 
-                  if (error.code === "23505") {
+                  /*
+                    同じGiftを誰かが
+                    先に取得した場合
+                  */
+
+                  if (
+                    error.code === "23505"
+                  ) {
 
                     card.innerHTML = `
                       <div class="already-taken">
@@ -281,6 +405,8 @@
                         受け取り済みです。
                       </div>
                     `;
+
+                    await loadGifts();
 
                     return;
                   }
@@ -293,13 +419,16 @@
 
 
                   alert(
-                    "受け取りに失敗しました。\n" +
-                    error.message
+                    "受け取りに失敗しました。"
                   );
 
                   return;
                 }
 
+
+                /*
+                  自分が取得成功
+                */
 
                 card.innerHTML = `
 
@@ -322,13 +451,19 @@
 
 
                 const code =
-                  card.querySelector(".code");
+                  card.querySelector(
+                    ".code"
+                  );
 
                 const copyButton =
-                  card.querySelector(".copy-button");
+                  card.querySelector(
+                    ".copy-button"
+                  );
 
                 const completeButton =
-                  card.querySelector(".complete-button");
+                  card.querySelector(
+                    ".complete-button"
+                  );
 
 
                 async function copyCode() {
@@ -344,12 +479,15 @@
                       "✓ コピーしました";
 
 
-                    setTimeout(function () {
+                    setTimeout(
+                      function () {
 
-                      copyButton.textContent =
-                        "📋 コードをコピー";
+                        copyButton.textContent =
+                          "📋 コードをコピー";
 
-                    }, 1500);
+                      },
+                      1500
+                    );
 
 
                   } catch (error) {
@@ -379,13 +517,29 @@
 
                 completeButton.addEventListener(
                   "click",
-                  function () {
+                  async function () {
+
+                    completeButton.disabled =
+                      true;
+
+                    completeButton.textContent =
+                      "処理中...";
+
+
+                    /*
+                      すでにDBには
+                      受け取り記録があるので、
+                      画面だけ受け取り済みにする
+                    */
 
                     card.innerHTML = `
                       <div class="received">
                         受け取り済み
                       </div>
                     `;
+
+
+                    await loadGifts();
 
                   }
                 );
@@ -407,8 +561,7 @@
 
         giftList.innerHTML = `
           <div class="error">
-            エラーが発生しました。<br><br>
-            ${error.message}
+            エラーが発生しました。
           </div>
         `;
 
@@ -417,7 +570,34 @@
     }
 
 
+    /*
+      最初に読み込み
+    */
+
     loadGifts();
+
+
+    /*
+      時刻表示を毎分更新
+    */
+
+    updateTimeDisplay();
+
+    setInterval(
+      updateTimeDisplay,
+      60000
+    );
+
+
+    /*
+      Gift一覧・カウンターを
+      30秒ごとに自動更新
+    */
+
+    setInterval(
+      loadGifts,
+      30000
+    );
 
   </script>
 
