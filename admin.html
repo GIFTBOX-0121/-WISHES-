@@ -33,14 +33,95 @@ body {
 h1 {
   text-align: center;
   font-size: 27px;
-  margin: 10px 0 8px;
+  margin: 10px 0 25px;
+}
+
+
+/* =========================
+   ログイン
+========================= */
+
+.login-box {
+  background: white;
+  padding: 24px 18px;
+  border-radius: 14px;
+
+  box-shadow:
+    0 2px 8px rgba(0,0,0,0.08);
+}
+
+.login-title {
+  text-align: center;
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 15px;
+  margin-bottom: 12px;
+
+  border: 1px solid #ccc;
+  border-radius: 9px;
+
+  font-size: 16px;
+  outline: none;
+}
+
+.input:focus {
+  border-color: #777;
+}
+
+.login-button {
+  width: 100%;
+  padding: 15px;
+
+  border: none;
+  border-radius: 9px;
+
+  background: #333;
+  color: white;
+
+  font-size: 16px;
+  font-weight: bold;
+
+  cursor: pointer;
+}
+
+.login-button:active {
+  transform: scale(0.98);
+}
+
+.login-button:disabled {
+  opacity: 0.6;
+}
+
+.login-error {
+  min-height: 22px;
+  margin-top: 12px;
+
+  text-align: center;
+
+  font-size: 14px;
+  color: #d94b4b;
+}
+
+
+/* =========================
+   管理画面
+========================= */
+
+#admin-area {
+  display: none;
 }
 
 .subtitle {
   text-align: center;
   font-size: 13px;
   color: #999;
-  margin-bottom: 25px;
+  margin: -15px 0 25px;
 }
 
 
@@ -49,9 +130,12 @@ h1 {
 .summary {
   background: #333;
   color: white;
+
   border-radius: 14px;
+
   padding: 18px;
   margin-bottom: 22px;
+
   text-align: center;
 }
 
@@ -67,11 +151,13 @@ h1 {
 }
 
 
-/* 日別カード */
+/* 日別 */
 
 .day-card {
   background: white;
+
   border-radius: 14px;
+
   padding: 20px;
   margin-bottom: 16px;
 
@@ -82,12 +168,15 @@ h1 {
 .date {
   font-size: 19px;
   font-weight: bold;
+
   margin-bottom: 16px;
+
   text-align: center;
 }
 
 .row {
   display: flex;
+
   justify-content: space-between;
   align-items: center;
 
@@ -108,6 +197,7 @@ h1 {
 
 .total-row {
   display: flex;
+
   justify-content: space-between;
 
   margin-top: 12px;
@@ -120,24 +210,24 @@ h1 {
 }
 
 
-/* 空 */
+/* メッセージ */
+
+.empty,
+.error {
+  background: white;
+
+  border-radius: 14px;
+
+  padding: 30px 20px;
+
+  text-align: center;
+}
 
 .empty {
-  background: white;
-  border-radius: 14px;
-  padding: 30px 20px;
-  text-align: center;
   color: #999;
 }
 
-
-/* エラー */
-
 .error {
-  background: white;
-  border-radius: 14px;
-  padding: 25px 20px;
-  text-align: center;
   color: #d94b4b;
 }
 
@@ -146,9 +236,33 @@ h1 {
 
 .update {
   text-align: center;
+
   color: #aaa;
+
   font-size: 12px;
+
   margin: 20px 0;
+}
+
+
+/* ログアウト */
+
+.logout-button {
+  display: block;
+
+  margin: 30px auto 10px;
+
+  padding: 11px 25px;
+
+  border: 1px solid #ccc;
+  border-radius: 9px;
+
+  background: white;
+  color: #777;
+
+  font-size: 14px;
+
+  cursor: pointer;
 }
 
 </style>
@@ -156,7 +270,6 @@ h1 {
 
 
 <body>
-
 
 <div class="container">
 
@@ -166,37 +279,103 @@ h1 {
 </h1>
 
 
-<div class="subtitle">
-Gift追加数
+
+<!-- =========================
+     ログイン画面
+========================= -->
+
+<div id="login-area">
+
+  <div class="login-box">
+
+    <div class="login-title">
+      🔐 管理者ログイン
+    </div>
+
+
+    <input
+      id="email"
+      class="input"
+      type="email"
+      placeholder="メールアドレス"
+      autocomplete="email"
+    >
+
+
+    <input
+      id="password"
+      class="input"
+      type="password"
+      placeholder="パスワード"
+      autocomplete="current-password"
+    >
+
+
+    <button
+      id="login-button"
+      class="login-button"
+    >
+      ログイン
+    </button>
+
+
+    <div
+      id="login-error"
+      class="login-error"
+    ></div>
+
+  </div>
+
 </div>
 
 
 
-<div class="summary">
+<!-- =========================
+     管理画面
+========================= -->
 
-  <div class="summary-title">
-    累計Gift
+<div id="admin-area">
+
+
+  <div class="subtitle">
+    Gift追加数
   </div>
+
+
+  <div class="summary">
+
+    <div class="summary-title">
+      累計Gift
+    </div>
+
+    <div
+      id="grand-total"
+      class="summary-number"
+    >
+      0
+    </div>
+
+  </div>
+
+
+  <div id="stats"></div>
+
 
   <div
-    id="grand-total"
-    class="summary-number"
+    id="update-time"
+    class="update"
+  ></div>
+
+
+  <button
+    id="logout-button"
+    class="logout-button"
   >
-    0
-  </div>
+    ログアウト
+  </button>
+
 
 </div>
-
-
-
-<div id="stats"></div>
-
-
-
-<div
-  id="update-time"
-  class="update"
-></div>
 
 
 </div>
@@ -205,6 +384,10 @@ Gift追加数
 
 <script>
 
+
+/* =========================
+   Supabase
+========================= */
 
 const SUPABASE_URL =
   "https://cgnluuynrurbsipwwluo.supabase.co";
@@ -218,6 +401,53 @@ const client =
   window.supabase.createClient(
     SUPABASE_URL,
     SUPABASE_KEY
+  );
+
+
+
+/* =========================
+   パーツ
+========================= */
+
+const loginArea =
+  document.getElementById(
+    "login-area"
+  );
+
+
+const adminArea =
+  document.getElementById(
+    "admin-area"
+  );
+
+
+const emailInput =
+  document.getElementById(
+    "email"
+  );
+
+
+const passwordInput =
+  document.getElementById(
+    "password"
+  );
+
+
+const loginButton =
+  document.getElementById(
+    "login-button"
+  );
+
+
+const loginError =
+  document.getElementById(
+    "login-error"
+  );
+
+
+const logoutButton =
+  document.getElementById(
+    "logout-button"
   );
 
 
@@ -241,35 +471,200 @@ const updateTime =
 
 
 /* =========================
+   ログイン画面表示
+========================= */
+
+function showLogin() {
+
+  loginArea.style.display =
+    "block";
+
+  adminArea.style.display =
+    "none";
+
+}
+
+
+
+/* =========================
+   管理画面表示
+========================= */
+
+function showAdmin() {
+
+  loginArea.style.display =
+    "none";
+
+  adminArea.style.display =
+    "block";
+
+}
+
+
+
+/* =========================
+   ログイン
+========================= */
+
+async function login() {
+
+
+  loginError.textContent =
+    "";
+
+
+  const email =
+    emailInput.value.trim();
+
+
+  const password =
+    passwordInput.value;
+
+
+  if (
+    !email ||
+    !password
+  ) {
+
+    loginError.textContent =
+      "メールアドレスとパスワードを入力してください";
+
+    return;
+  }
+
+
+  loginButton.disabled =
+    true;
+
+
+  loginButton.textContent =
+    "ログイン中…";
+
+
+  const {
+    data,
+    error
+  } =
+    await client.auth
+      .signInWithPassword({
+
+        email:
+          email,
+
+        password:
+          password
+
+      });
+
+
+  loginButton.disabled =
+    false;
+
+
+  loginButton.textContent =
+    "ログイン";
+
+
+  if (error) {
+
+    console.error(error);
+
+    loginError.textContent =
+      "メールアドレスまたはパスワードが違います";
+
+    return;
+  }
+
+
+  showAdmin();
+
+  loadStats();
+
+}
+
+
+
+/* =========================
+   ログインボタン
+========================= */
+
+loginButton.addEventListener(
+  "click",
+  login
+);
+
+
+
+/* Enterでもログイン */
+
+passwordInput.addEventListener(
+  "keydown",
+  function(event) {
+
+    if (
+      event.key === "Enter"
+    ) {
+
+      login();
+
+    }
+
+  }
+);
+
+
+
+/* =========================
+   ログアウト
+========================= */
+
+logoutButton.addEventListener(
+  "click",
+  async function() {
+
+
+    await client.auth
+      .signOut();
+
+
+    emailInput.value =
+      "";
+
+
+    passwordInput.value =
+      "";
+
+
+    showLogin();
+
+  }
+);
+
+
+
+/* =========================
    日付表示
 ========================= */
 
+function formatDate(
+  dateString
+) {
 
-function formatDate(dateString) {
 
-
-  const parts =
+  const [
+    year,
+    month,
+    day
+  ] =
     dateString.split("-");
 
 
-  const year =
-    Number(parts[0]);
-
-
-  const month =
-    Number(parts[1]);
-
-
-  const day =
-    Number(parts[2]);
-
-
   return (
-    year +
+    Number(year) +
     "年" +
-    month +
+    Number(month) +
     "月" +
-    day +
+    Number(day) +
     "日"
   );
 
@@ -278,9 +673,8 @@ function formatDate(dateString) {
 
 
 /* =========================
-   更新時刻
+   更新時間
 ========================= */
-
 
 function showUpdateTime() {
 
@@ -325,9 +719,8 @@ function showUpdateTime() {
 
 
 /* =========================
-   永久保存データ読み込み
+   永久保存された集計を取得
 ========================= */
-
 
 async function loadStats() {
 
@@ -356,10 +749,7 @@ async function loadStats() {
 
   if (error) {
 
-
-    console.error(
-      error
-    );
+    console.error(error);
 
 
     stats.innerHTML =
@@ -369,19 +759,11 @@ async function loadStats() {
 
 
     return;
-
   }
-
 
 
   const records =
     data || [];
-
-
-
-  /*
-    全期間累計
-  */
 
 
   let allTotal =
@@ -391,12 +773,10 @@ async function loadStats() {
   records.forEach(
     item => {
 
-
       allTotal +=
         Number(
           item.gift_count
         ) || 0;
-
 
     }
   );
@@ -406,16 +786,9 @@ async function loadStats() {
     allTotal;
 
 
-
-  /*
-    データなし
-  */
-
-
   if (
     records.length === 0
   ) {
-
 
     stats.innerHTML =
       `<div class="empty">
@@ -425,17 +798,14 @@ async function loadStats() {
 
     showUpdateTime();
 
-
     return;
-
   }
 
 
 
-  /*
-    日付ごとにまとめる
-  */
-
+  /* =========================
+     日付ごとにまとめる
+  ========================= */
 
   const grouped =
     {};
@@ -453,7 +823,6 @@ async function loadStats() {
         !grouped[date]
       ) {
 
-
         grouped[date] =
           {
 
@@ -470,19 +839,16 @@ async function loadStats() {
       }
 
 
-
       const count =
         Number(
           item.gift_count
         ) || 0;
 
 
-
       if (
         item.service ===
         "itunes"
       ) {
-
 
         grouped[date]
           .itunes +=
@@ -491,12 +857,10 @@ async function loadStats() {
       }
 
 
-
       if (
         item.service ===
         "recochoku"
       ) {
-
 
         grouped[date]
           .recochoku +=
@@ -505,12 +869,10 @@ async function loadStats() {
       }
 
 
-
       if (
         item.service ===
         "mumo"
       ) {
-
 
         grouped[date]
           .mumo +=
@@ -519,20 +881,13 @@ async function loadStats() {
       }
 
 
-
       grouped[date]
         .total +=
         count;
 
-
     }
   );
 
-
-
-  /*
-    新しい日付順
-  */
 
 
   const dates =
@@ -544,15 +899,9 @@ async function loadStats() {
     );
 
 
-
   stats.innerHTML =
     "";
 
-
-
-  /*
-    カード作成
-  */
 
 
   dates.forEach(
@@ -577,9 +926,7 @@ async function loadStats() {
         `
 
         <div class="date">
-
           ${formatDate(date)}
-
         </div>
 
 
@@ -641,7 +988,6 @@ async function loadStats() {
         card
       );
 
-
     }
   );
 
@@ -653,21 +999,75 @@ async function loadStats() {
 
 
 /* =========================
-   初回読み込み
+   ページを開いた時
 ========================= */
 
+async function checkSession() {
 
-loadStats();
+
+  const {
+    data
+  } =
+    await client.auth
+      .getSession();
+
+
+  if (
+    data.session
+  ) {
+
+    /*
+      前回ログイン済みなら
+      そのまま管理画面
+    */
+
+    showAdmin();
+
+    loadStats();
+
+
+  } else {
+
+    /*
+      未ログインなら
+      ログイン画面
+    */
+
+    showLogin();
+
+  }
+
+}
+
+
+checkSession();
 
 
 
 /* =========================
-   30秒ごとに自動更新
+   30秒ごとに更新
 ========================= */
 
-
 setInterval(
-  loadStats,
+  async function() {
+
+
+    const {
+      data
+    } =
+      await client.auth
+        .getSession();
+
+
+    if (
+      data.session
+    ) {
+
+      loadStats();
+
+    }
+
+  },
   30000
 );
 
