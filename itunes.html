@@ -1,1139 +1,1347 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>iTunes</title>
+<title>iTunes</title>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  <style>
-    body {
-      font-family:
-        -apple-system,
-        BlinkMacSystemFont,
-        "Helvetica Neue",
-        "Hiragino Kaku Gothic ProN",
-        "Yu Gothic",
-        sans-serif;
+<style>
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue",
+    "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+  background: #f7f7f7;
+  margin: 0;
+  padding: 30px 15px;
+  color: #333;
+}
 
-      background: #f7f7f7;
-      margin: 0;
-      padding: 30px 15px;
-      color: #333;
-    }
+.container {
+  max-width: 600px;
+  margin: 0 auto;
+}
 
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-    }
+header {
+  text-align: center;
+  margin-bottom: 25px;
+}
 
-    header {
-      text-align: center;
-      margin-bottom: 25px;
-    }
+h1 {
+  margin: 0 0 15px;
+  font-size: 28px;
+}
 
-    h1 {
-      margin: 0 0 15px;
-      font-size: 28px;
-    }
+.header-image {
+  display: block;
+  width: 100%;
+  max-width: 500px;
+  height: auto;
+  margin: 0 auto 15px;
+  border-radius: 12px;
+}
 
-    .header-image {
-      display: block;
-      width: 100%;
-      max-width: 500px;
-      height: auto;
-      margin: 0 auto 15px;
-      border-radius: 12px;
-    }
+.line {
+  border-top: 1px solid #ddd;
+  margin: 14px 0;
+}
 
-    .stats {
-      margin-top: 10px;
-    }
+/* 追加ボタン＋カウンター */
 
-    .line {
-      border-top: 1px solid #ddd;
-      margin: 14px 0;
-    }
+.control-area {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 5px 8px;
+}
 
-    .counter {
-      font-size: 18px;
-      font-weight: bold;
-      margin-bottom: 6px;
-      color: #d94b4b;
-    }
+.add-side {
+  width: 46%;
+}
 
-    .time {
-      font-size: 12px;
-      color: #999;
-      margin-bottom: 3px;
-    }
+.stats-side {
+  width: 54%;
+  text-align: right;
+}
 
-    .total {
-      font-size: 13px;
-      color: #777;
-    }
+.open-add-button {
+  width: 100%;
+  padding: 14px 10px;
+  border: none;
+  border-radius: 10px;
+  background: #333;
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+}
 
-    .gift-card {
-      background: white;
-      padding: 20px;
-      margin-bottom: 15px;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    }
+.counter {
+  font-size: 18px;
+  font-weight: bold;
+  color: #d94b4b;
+  margin-bottom: 5px;
+  white-space: nowrap;
+}
 
-    .receive-button,
-    .copy-button,
-    .complete-button {
-      width: 100%;
-      padding: 14px;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      cursor: pointer;
-      -webkit-tap-highlight-color: transparent;
-    }
+.time {
+  font-size: 12px;
+  color: #999;
+  margin-bottom: 3px;
+}
 
-    .receive-button {
-      background: #333;
-      color: white;
-    }
+.total {
+  font-size: 13px;
+  color: #777;
+}
 
-    .receive-button:disabled,
-    .complete-button:disabled {
-      background: #aaa;
-    }
+/* Gift追加フォーム */
 
-    .code {
-      background: #f1f1f1;
-      padding: 15px;
-      border-radius: 8px;
-      text-align: center;
-      font-size: 18px;
-      font-weight: bold;
-      word-break: break-all;
-      cursor: pointer;
-      -webkit-user-select: text;
-      user-select: text;
-    }
+.add-form {
+  display: none;
+  background: white;
+  padding: 16px;
+  margin: 12px 0 5px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
 
-    .copy-button {
-      margin-top: 10px;
-      background: #eee;
-      color: #333;
-    }
+.add-form.show {
+  display: block;
+}
 
-    .complete-button {
-      margin-top: 10px;
-      background: #333;
-      color: white;
-    }
+.add-label {
+  text-align: left;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
 
-    .received {
-      text-align: center;
-      color: #999;
-      padding: 10px;
-    }
+.add-input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 14px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 16px;
+  outline: none;
+}
 
-    .already-taken {
-      text-align: center;
-      color: #999;
-      padding: 10px;
-    }
+.add-input:focus {
+  border-color: #888;
+}
 
-    .error {
-      text-align: center;
-      color: #d00;
-      background: white;
-      padding: 15px;
-      border-radius: 10px;
-    }
+.submit-add-button {
+  width: 100%;
+  padding: 14px;
+  margin-top: 10px;
+  border: none;
+  border-radius: 8px;
+  background: #333;
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+}
 
-    .pagination {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin: 25px 0;
-    }
+.submit-add-button:disabled {
+  background: #aaa;
+}
 
-    .page-button {
-      min-width: 40px;
-      height: 40px;
-      padding: 0 10px;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      background: white;
-      color: #333;
-      font-size: 14px;
-      cursor: pointer;
-    }
+/* Gift一覧 */
 
-    .page-button.active {
-      background: #333;
-      color: white;
-      border-color: #333;
-    }
+.gift-card {
+  background: white;
+  padding: 20px;
+  margin-bottom: 15px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
 
-    .page-button:disabled {
-      color: #aaa;
-      background: #f5f5f5;
-      cursor: default;
-    }
+.receive-button,
+.copy-button,
+.complete-button {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+}
 
-    .back {
-      display: block;
-      text-align: center;
-      margin-top: 25px;
-      color: #555;
-      text-decoration: none;
-    }
-  </style>
+.receive-button {
+  background: #333;
+  color: white;
+}
+
+.receive-button:disabled,
+.complete-button:disabled {
+  background: #aaa;
+}
+
+.code {
+  background: #f1f1f1;
+  padding: 15px;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 18px;
+  font-weight: bold;
+  word-break: break-all;
+  cursor: pointer;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.copy-button {
+  margin-top: 10px;
+  background: #eee;
+  color: #333;
+}
+
+.complete-button {
+  margin-top: 10px;
+  background: #333;
+  color: white;
+}
+
+.received {
+  text-align: center;
+  color: #999;
+  padding: 10px;
+}
+
+.error {
+  text-align: center;
+  color: #d00;
+  background: white;
+  padding: 15px;
+  border-radius: 10px;
+}
+
+/* ページ番号 */
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 25px 0;
+}
+
+.page-button {
+  min-width: 40px;
+  height: 40px;
+  padding: 0 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: white;
+  color: #333;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.page-button.active {
+  background: #333;
+  color: white;
+  border-color: #333;
+}
+
+.page-button:disabled {
+  color: #aaa;
+  background: #f5f5f5;
+}
+
+.back {
+  display: block;
+  text-align: center;
+  margin-top: 25px;
+  color: #555;
+  text-decoration: none;
+}
+
+@media (max-width: 400px) {
+
+  .control-area {
+    gap: 10px;
+  }
+
+  .add-side {
+    width: 42%;
+  }
+
+  .stats-side {
+    width: 58%;
+  }
+
+  .open-add-button {
+    font-size: 14px;
+    padding: 13px 6px;
+  }
+
+  .counter {
+    font-size: 16px;
+  }
+}
+</style>
 </head>
 
 <body>
 
-  <div class="container">
+<div class="container">
 
-    <header>
+<header>
 
-      <h1>iTunes</h1>
+<h1>iTunes</h1>
 
-      <img
-        class="header-image"
-        src="24BAC62E-3563-42A4-9EE5-F72598664198.jpeg"
-        alt=""
-      >
+<img
+  class="header-image"
+  src="24BAC62E-3563-42A4-9EE5-F72598664198.jpeg"
+  alt=""
+>
 
-      <div class="stats">
-
-        <div class="line"></div>
-
-        <div class="counter" id="counter">
-          未受け取り🎁0件
-        </div>
-
-        <div class="time" id="update-time">
-          9月22日 00:00時点
-        </div>
-
-        <div class="total" id="total">
-          Total：0件
-        </div>
-
-        <div class="line"></div>
-
-      </div>
-
-    </header>
+<div class="line"></div>
 
 
-    <div id="gift-list"></div>
+<div class="control-area">
 
-    <div
-      id="pagination"
-      class="pagination"
-    ></div>
+  <div class="add-side">
 
-
-    <a
-      href="index.html"
-      class="back"
+    <button
+      id="open-add-button"
+      class="open-add-button"
     >
-      ← サービス選択に戻る
-    </a>
+      🎁を追加
+    </button>
 
   </div>
 
 
-  <script>
+  <div class="stats-side">
 
-    const SUPABASE_URL =
-      "https://cgnluuynrurbsipwwluo.supabase.co";
+    <div
+      class="counter"
+      id="counter"
+    >
+      未受け取り🎁0件
+    </div>
 
-    const SUPABASE_KEY =
-      "sb_publishable_pZbtlCfKh1BVOxHaeXBIAA_CvfP0o0q";
+    <div
+      class="time"
+      id="update-time"
+    ></div>
 
-    const client =
-      window.supabase.createClient(
-        SUPABASE_URL,
-        SUPABASE_KEY
+    <div
+      class="total"
+      id="total"
+    >
+      Total：0件
+    </div>
+
+  </div>
+
+</div>
+
+
+<div
+  id="add-form"
+  class="add-form"
+>
+
+  <div class="add-label">
+    iTunesコード
+  </div>
+
+  <input
+    id="gift-input"
+    class="add-input"
+    type="text"
+    placeholder="コードを入力"
+    autocomplete="off"
+  >
+
+  <button
+    id="submit-add-button"
+    class="submit-add-button"
+  >
+    🎁を追加
+  </button>
+
+</div>
+
+
+<div class="line"></div>
+
+</header>
+
+
+<div id="gift-list"></div>
+
+<div
+  id="pagination"
+  class="pagination"
+></div>
+
+
+<a
+  href="index.html"
+  class="back"
+>
+← サービス選択に戻る
+</a>
+
+</div>
+
+
+<script>
+
+const SUPABASE_URL =
+"https://cgnluuynrurbsipwwluo.supabase.co";
+
+const SUPABASE_KEY =
+"sb_publishable_pZbtlCfKh1BVOxHaeXBIAA_CvfP0o0q";
+
+const client =
+window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
+
+
+const giftList =
+document.getElementById("gift-list");
+
+const pagination =
+document.getElementById("pagination");
+
+const counter =
+document.getElementById("counter");
+
+const total =
+document.getElementById("total");
+
+const updateTime =
+document.getElementById("update-time");
+
+const openAddButton =
+document.getElementById("open-add-button");
+
+const addForm =
+document.getElementById("add-form");
+
+const giftInput =
+document.getElementById("gift-input");
+
+const submitAddButton =
+document.getElementById("submit-add-button");
+
+
+const RECEIVED_PER_PAGE = 20;
+
+let currentPage = 1;
+
+let allGifts = [];
+
+let receivedIds = new Set();
+
+
+/* =========================
+   時刻
+========================= */
+
+function updateTimeDisplay() {
+
+  const now = new Date();
+
+  const month =
+    now.getMonth() + 1;
+
+  const day =
+    now.getDate();
+
+  const hours =
+    String(
+      now.getHours()
+    ).padStart(2, "0");
+
+  const minutes =
+    String(
+      now.getMinutes()
+    ).padStart(2, "0");
+
+
+  updateTime.textContent =
+    `${month}月${day}日 ${hours}:${minutes}時点`;
+}
+
+
+/* =========================
+   追加フォームを開く
+========================= */
+
+openAddButton.addEventListener(
+  "click",
+  function () {
+
+    addForm.classList.toggle(
+      "show"
+    );
+
+
+    if (
+      addForm.classList.contains(
+        "show"
+      )
+    ) {
+
+      setTimeout(
+        function () {
+          giftInput.focus();
+        },
+        100
+      );
+
+    }
+
+  }
+);
+
+
+/* =========================
+   Giftを追加
+========================= */
+
+submitAddButton.addEventListener(
+  "click",
+  async function () {
+
+    const giftCode =
+      giftInput.value.trim();
+
+
+    if (!giftCode) {
+
+      alert(
+        "コードを入力してください。"
+      );
+
+      return;
+    }
+
+
+    submitAddButton.disabled =
+      true;
+
+
+    submitAddButton.textContent =
+      "追加中...";
+
+
+    const { error } =
+      await client
+        .from("gifts")
+        .insert({
+
+          service:
+            "itunes",
+
+          gift_code:
+            giftCode
+
+        });
+
+
+    if (error) {
+
+      console.error(error);
+
+
+      submitAddButton.disabled =
+        false;
+
+
+      submitAddButton.textContent =
+        "🎁を追加";
+
+
+      alert(
+        "Giftの追加に失敗しました。"
       );
 
 
-    const giftList =
-      document.getElementById("gift-list");
-
-    const pagination =
-      document.getElementById("pagination");
-
-    const counter =
-      document.getElementById("counter");
-
-    const updateTime =
-      document.getElementById("update-time");
-
-    const total =
-      document.getElementById("total");
-
-
-    const RECEIVED_PER_PAGE = 20;
-
-    let currentPage = 1;
-
-    let allGifts = [];
-
-    let receivedIds = new Set();
-
-
-    function updateTimeDisplay() {
-
-      const now = new Date();
-
-      const month =
-        now.getMonth() + 1;
-
-      const day =
-        now.getDate();
-
-      const hours =
-        String(
-          now.getHours()
-        ).padStart(2, "0");
-
-      const minutes =
-        String(
-          now.getMinutes()
-        ).padStart(2, "0");
-
-      updateTime.textContent =
-        `${month}月${day}日 ${hours}:${minutes}時点`;
-
+      return;
     }
 
 
-    async function copyText(text) {
+    /*
+      入力欄を即空にする
+    */
 
-      try {
-
-        if (
-          navigator.clipboard &&
-          window.isSecureContext
-        ) {
-
-          await navigator.clipboard.writeText(
-            text
-          );
-
-          return true;
-        }
-
-      } catch (error) {
-
-        console.log(error);
-
-      }
+    giftInput.value =
+      "";
 
 
-      try {
+    /*
+      Thank you表示
+    */
 
-        const textarea =
-          document.createElement("textarea");
-
-        textarea.value = text;
-
-        textarea.style.position =
-          "fixed";
-
-        textarea.style.left =
-          "-9999px";
-
-        textarea.style.top =
-          "0";
-
-        textarea.style.opacity =
-          "0";
-
-        document.body.appendChild(
-          textarea
-        );
-
-        textarea.focus();
-
-        textarea.select();
-
-        textarea.setSelectionRange(
-          0,
-          textarea.value.length
-        );
-
-        const success =
-          document.execCommand(
-            "copy"
-          );
-
-        document.body.removeChild(
-          textarea
-        );
-
-        return success;
-
-      } catch (error) {
-
-        console.error(error);
-
-        return false;
-
-      }
-
-    }
+    submitAddButton.textContent =
+      "☆ 𝑻𝒉𝒂𝒏𝒌 𝒚𝒐𝒖 ☆";
 
 
-    async function loadGifts() {
+    /*
+      一覧・件数を即更新
+    */
 
-      try {
-
-        const {
-          data: gifts,
-          error
-        } =
-          await client
-            .from("gifts")
-            .select(
-              "id, gift_code, service"
-            )
-            .eq(
-              "service",
-              "itunes"
-            )
-            .order(
-              "id",
-              {
-                ascending: true
-              }
-            );
+    await loadGifts();
 
 
-        if (error) {
+    /*
+      1秒後に追加ボタンへ戻す
+    */
 
-          console.error(error);
+    setTimeout(
+      function () {
 
-          giftList.innerHTML = `
-            <div class="error">
-              Giftを読み込めませんでした。
-            </div>
-          `;
-
-          return;
-
-        }
+        submitAddButton.disabled =
+          false;
 
 
-        const {
-          data: receipts,
-          error: receiptError
-        } =
-          await client
-            .from("gift_receipts")
-            .select(
-              "gift_id"
-            );
-
-
-        if (receiptError) {
-
-          console.error(
-            receiptError
-          );
-
-          giftList.innerHTML = `
-            <div class="error">
-              受け取り情報を読み込めませんでした。
-            </div>
-          `;
-
-          return;
-
-        }
-
-
-        allGifts =
-          gifts || [];
-
-
-        receivedIds =
-          new Set(
-            (receipts || []).map(
-              item =>
-                item.gift_id
-            )
-          );
-
-
-        const totalCount =
-          allGifts.length;
-
-
-        const unreceivedCount =
-          allGifts.filter(
-            gift =>
-              !receivedIds.has(
-                gift.id
-              )
-          ).length;
-
-
-        counter.textContent =
-          `未受け取り🎁${unreceivedCount}件`;
-
-
-        total.textContent =
-          `Total：${totalCount}件`;
-
-
-        updateTimeDisplay();
+        submitAddButton.textContent =
+          "🎁を追加";
 
 
         /*
-          現在のページが
-          存在しなくなった場合の調整
+          次のコードを
+          すぐ入力できる
         */
 
-        const receivedGifts =
-          allGifts.filter(
-            gift =>
-              receivedIds.has(
-                gift.id
-              )
-          );
+        giftInput.focus();
+
+      },
+      1000
+    );
+
+  }
+);
 
 
-        const totalPages =
-          Math.max(
-            1,
-            Math.ceil(
-              receivedGifts.length /
-              RECEIVED_PER_PAGE
-            )
-          );
+/* Enterでも追加 */
+
+giftInput.addEventListener(
+  "keydown",
+  function (event) {
+
+    if (
+      event.key === "Enter" &&
+      !submitAddButton.disabled
+    ) {
+
+      submitAddButton.click();
+
+    }
+
+  }
+);
+
+
+/* =========================
+   コピー
+========================= */
+
+async function copyText(text) {
+
+  try {
+
+    if (
+      navigator.clipboard &&
+      window.isSecureContext
+    ) {
+
+      await navigator.clipboard.writeText(
+        text
+      );
+
+      return true;
+    }
+
+  } catch (error) {
+
+    console.log(error);
+  }
+
+
+  try {
+
+    const textarea =
+      document.createElement(
+        "textarea"
+      );
+
+    textarea.value =
+      text;
+
+    textarea.style.position =
+      "fixed";
+
+    textarea.style.left =
+      "-9999px";
+
+    document.body.appendChild(
+      textarea
+    );
+
+    textarea.focus();
+
+    textarea.select();
+
+    textarea.setSelectionRange(
+      0,
+      textarea.value.length
+    );
+
+    const success =
+      document.execCommand(
+        "copy"
+      );
+
+    document.body.removeChild(
+      textarea
+    );
+
+    return success;
+
+  } catch (error) {
+
+    console.error(error);
+
+    return false;
+  }
+}
+
+
+/* =========================
+   Gift読み込み
+========================= */
+
+async function loadGifts() {
+
+  const {
+    data: gifts,
+    error
+  } =
+    await client
+      .from("gifts")
+      .select(
+        "id, gift_code, service"
+      )
+      .eq(
+        "service",
+        "itunes"
+      )
+      .order(
+        "id",
+        {
+          ascending: true
+        }
+      );
+
+
+  if (error) {
+
+    console.error(error);
+
+    giftList.innerHTML =
+      `<div class="error">
+        Giftを読み込めませんでした。
+      </div>`;
+
+    return;
+  }
+
+
+  const {
+    data: receipts,
+    error: receiptError
+  } =
+    await client
+      .from("gift_receipts")
+      .select(
+        "gift_id"
+      );
+
+
+  if (receiptError) {
+
+    console.error(
+      receiptError
+    );
+
+    giftList.innerHTML =
+      `<div class="error">
+        受け取り情報を読み込めませんでした。
+      </div>`;
+
+    return;
+  }
+
+
+  allGifts =
+    gifts || [];
+
+
+  receivedIds =
+    new Set(
+      (receipts || []).map(
+        item =>
+          item.gift_id
+      )
+    );
+
+
+  const unreceivedCount =
+    allGifts.filter(
+      gift =>
+        !receivedIds.has(
+          gift.id
+        )
+    ).length;
+
+
+  counter.textContent =
+    `未受け取り🎁${unreceivedCount}件`;
+
+
+  total.textContent =
+    `Total：${allGifts.length}件`;
+
+
+  updateTimeDisplay();
+
+
+  const receivedCount =
+    allGifts.filter(
+      gift =>
+        receivedIds.has(
+          gift.id
+        )
+    ).length;
+
+
+  const totalPages =
+    Math.max(
+      1,
+      Math.ceil(
+        receivedCount /
+        RECEIVED_PER_PAGE
+      )
+    );
+
+
+  if (
+    currentPage >
+    totalPages
+  ) {
+
+    currentPage =
+      totalPages;
+  }
+
+
+  renderGifts();
+
+  renderPagination();
+}
+
+
+/* =========================
+   Gift表示
+========================= */
+
+function renderGifts() {
+
+  giftList.innerHTML =
+    "";
+
+
+  const unreceived =
+    allGifts.filter(
+      gift =>
+        !receivedIds.has(
+          gift.id
+        )
+    );
+
+
+  const received =
+    allGifts.filter(
+      gift =>
+        receivedIds.has(
+          gift.id
+        )
+    );
+
+
+  const start =
+    (currentPage - 1) *
+    RECEIVED_PER_PAGE;
+
+
+  const receivedPage =
+    received.slice(
+      start,
+      start +
+      RECEIVED_PER_PAGE
+    );
+
+
+  const display =
+    [
+      ...unreceived,
+      ...receivedPage
+    ];
+
+
+  if (
+    display.length === 0
+  ) {
+
+    giftList.innerHTML =
+      `<div class="gift-card">
+        <div style="text-align:center;">
+          現在Giftはありません。
+        </div>
+      </div>`;
+
+    return;
+  }
+
+
+  display.forEach(
+    renderGift
+  );
+}
+
+
+/* =========================
+   Giftカード
+========================= */
+
+function renderGift(gift) {
+
+  const card =
+    document.createElement(
+      "div"
+    );
+
+
+  card.className =
+    "gift-card";
+
+
+  if (
+    receivedIds.has(
+      gift.id
+    )
+  ) {
+
+    card.innerHTML =
+      `<div class="received">
+        受け取り済み
+      </div>`;
+
+
+    giftList.appendChild(
+      card
+    );
+
+
+    return;
+  }
+
+
+  card.innerHTML =
+    `<button class="receive-button">
+      コードを受け取る
+    </button>`;
+
+
+  const button =
+    card.querySelector(
+      ".receive-button"
+    );
+
+
+  button.addEventListener(
+    "click",
+    async function () {
+
+      button.disabled =
+        true;
+
+
+      button.textContent =
+        "受け取り中...";
+
+
+      const { error } =
+        await client
+          .from(
+            "gift_receipts"
+          )
+          .insert({
+
+            gift_id:
+              gift.id,
+
+            received_at:
+              new Date()
+                .toISOString()
+
+          });
+
+
+      if (error) {
 
 
         if (
-          currentPage >
-          totalPages
+          error.code ===
+          "23505"
         ) {
 
-          currentPage =
-            totalPages;
+          alert(
+            "このGiftは他の方が受け取り済みです。"
+          );
 
+
+          await loadGifts();
+
+
+          return;
         }
 
+
+        button.disabled =
+          false;
+
+
+        button.textContent =
+          "コードを受け取る";
+
+
+        alert(
+          "受け取りに失敗しました。"
+        );
+
+
+        return;
+      }
+
+
+      /*
+        取得成功
+      */
+
+      card.innerHTML = `
+
+        <div class="code">
+          ${gift.gift_code}
+        </div>
+
+        <button
+          class="copy-button"
+        >
+          📋 コードをコピー
+        </button>
+
+        <button
+          class="complete-button"
+        >
+          ✓ 受け取り完了
+        </button>
+
+      `;
+
+
+      const code =
+        card.querySelector(
+          ".code"
+        );
+
+
+      const copyButton =
+        card.querySelector(
+          ".copy-button"
+        );
+
+
+      const completeButton =
+        card.querySelector(
+          ".complete-button"
+        );
+
+
+      async function doCopy() {
+
+        const success =
+          await copyText(
+            gift.gift_code
+          );
+
+
+        if (success) {
+
+          copyButton.textContent =
+            "✓ コピーしました";
+
+
+          setTimeout(
+            function () {
+
+              copyButton.textContent =
+                "📋 コードをコピー";
+
+            },
+            1500
+          );
+
+        } else {
+
+          alert(
+            "コピーできませんでした。\nコードを長押ししてコピーしてください。"
+          );
+        }
+      }
+
+
+      code.addEventListener(
+        "click",
+        doCopy
+      );
+
+
+      copyButton.addEventListener(
+        "click",
+        doCopy
+      );
+
+
+      completeButton.addEventListener(
+        "click",
+        async function () {
+
+          completeButton.disabled =
+            true;
+
+
+          completeButton.textContent =
+            "処理中...";
+
+
+          await loadGifts();
+
+        }
+      );
+
+    }
+  );
+
+
+  giftList.appendChild(
+    card
+  );
+}
+
+
+/* =========================
+   ページ番号
+========================= */
+
+function renderPagination() {
+
+  pagination.innerHTML =
+    "";
+
+
+  const received =
+    allGifts.filter(
+      gift =>
+        receivedIds.has(
+          gift.id
+        )
+    );
+
+
+  const totalPages =
+    Math.ceil(
+      received.length /
+      RECEIVED_PER_PAGE
+    );
+
+
+  if (
+    totalPages <= 1
+  ) {
+
+    return;
+  }
+
+
+  const previous =
+    document.createElement(
+      "button"
+    );
+
+
+  previous.className =
+    "page-button";
+
+
+  previous.textContent =
+    "‹ 前へ";
+
+
+  previous.disabled =
+    currentPage === 1;
+
+
+  previous.onclick =
+    function () {
+
+      if (
+        currentPage > 1
+      ) {
+
+        currentPage--;
 
         renderGifts();
 
         renderPagination();
-
-
-      } catch (error) {
-
-        console.error(error);
-
-        giftList.innerHTML = `
-          <div class="error">
-            エラーが発生しました。
-          </div>
-        `;
-
       }
-
-    }
-
-
-    function renderGifts() {
-
-      giftList.innerHTML = "";
+    };
 
 
-      /*
-        未受け取り
-      */
-
-      const unreceivedGifts =
-        allGifts.filter(
-          gift =>
-            !receivedIds.has(
-              gift.id
-            )
-        );
+  pagination.appendChild(
+    previous
+  );
 
 
-      /*
-        受け取り済み
-      */
+  for (
+    let page = 1;
+    page <= totalPages;
+    page++
+  ) {
 
-      const receivedGifts =
-        allGifts.filter(
-          gift =>
-            receivedIds.has(
-              gift.id
-            )
-        );
-
-
-      /*
-        受け取り済みを
-        20件ずつ表示
-      */
-
-      const startIndex =
-        (currentPage - 1) *
-        RECEIVED_PER_PAGE;
-
-
-      const endIndex =
-        startIndex +
-        RECEIVED_PER_PAGE;
-
-
-      const pageReceivedGifts =
-        receivedGifts.slice(
-          startIndex,
-          endIndex
-        );
-
-
-      /*
-        未受け取りを先に表示
-      */
-
-      const displayGifts =
-        [
-          ...unreceivedGifts,
-          ...pageReceivedGifts
-        ];
-
-
-      if (
-        displayGifts.length === 0
-      ) {
-
-        giftList.innerHTML = `
-          <div class="gift-card">
-            <div style="text-align:center;">
-              現在Giftはありません。
-            </div>
-          </div>
-        `;
-
-        return;
-
-      }
-
-
-      displayGifts.forEach(
-        gift => {
-
-          renderGiftCard(
-            gift
-          );
-
-        }
+    const button =
+      document.createElement(
+        "button"
       );
 
-    }
+
+    button.className =
+      "page-button";
 
 
-    function renderGiftCard(
-      gift
+    button.textContent =
+      page;
+
+
+    if (
+      page === currentPage
     ) {
 
-      const card =
-        document.createElement(
-          "div"
-        );
-
-      card.className =
-        "gift-card";
-
-
-      /*
-        受け取り済み
-      */
-
-      if (
-        receivedIds.has(
-          gift.id
-        )
-      ) {
-
-        card.innerHTML = `
-          <div class="received">
-            受け取り済み
-          </div>
-        `;
-
-
-        giftList.appendChild(
-          card
-        );
-
-
-        return;
-
-      }
-
-
-      /*
-        未受け取り
-      */
-
-      card.innerHTML = `
-        <button class="receive-button">
-          コードを受け取る
-        </button>
-      `;
-
-
-      const button =
-        card.querySelector(
-          ".receive-button"
-        );
-
-
-      button.addEventListener(
-        "click",
-        async function () {
-
-          button.disabled =
-            true;
-
-          button.textContent =
-            "受け取り中...";
-
-
-          const {
-            error
-          } =
-            await client
-              .from(
-                "gift_receipts"
-              )
-              .insert({
-                gift_id:
-                  gift.id,
-
-                received_at:
-                  new Date()
-                    .toISOString()
-              });
-
-
-          if (error) {
-
-            console.error(
-              error
-            );
-
-
-            /*
-              誰かが先に
-              受け取った場合
-            */
-
-            if (
-              error.code ===
-              "23505"
-            ) {
-
-              card.innerHTML = `
-                <div class="already-taken">
-                  このGiftは<br>
-                  受け取り済みです。
-                </div>
-              `;
-
-
-              await loadGifts();
-
-              return;
-
-            }
-
-
-            button.disabled =
-              false;
-
-            button.textContent =
-              "コードを受け取る";
-
-
-            alert(
-              "受け取りに失敗しました。"
-            );
-
-
-            return;
-
-          }
-
-
-          /*
-            受け取り成功
-          */
-
-          card.innerHTML = `
-
-            <div
-              class="code"
-              title="タップしてコピー"
-            >
-              ${gift.gift_code}
-            </div>
-
-            <button
-              class="copy-button"
-            >
-              📋 コードをコピー
-            </button>
-
-            <button
-              class="complete-button"
-            >
-              ✓ 受け取り完了
-            </button>
-
-          `;
-
-
-          const code =
-            card.querySelector(
-              ".code"
-            );
-
-
-          const copyButton =
-            card.querySelector(
-              ".copy-button"
-            );
-
-
-          const completeButton =
-            card.querySelector(
-              ".complete-button"
-            );
-
-
-          async function doCopy() {
-
-            const success =
-              await copyText(
-                gift.gift_code
-              );
-
-
-            if (success) {
-
-              copyButton.textContent =
-                "✓ コピーしました";
-
-
-              setTimeout(
-                function () {
-
-                  copyButton.textContent =
-                    "📋 コードをコピー";
-
-                },
-                1500
-              );
-
-
-            } else {
-
-              alert(
-                "コピーできませんでした。\nコードを長押ししてコピーしてください。"
-              );
-
-            }
-
-          }
-
-
-          code.addEventListener(
-            "click",
-            doCopy
-          );
-
-
-          copyButton.addEventListener(
-            "click",
-            doCopy
-          );
-
-
-          completeButton.addEventListener(
-            "click",
-            async function () {
-
-              completeButton.disabled =
-                true;
-
-              completeButton.textContent =
-                "処理中...";
-
-
-              card.innerHTML = `
-                <div class="received">
-                  受け取り済み
-                </div>
-              `;
-
-
-              await loadGifts();
-
-            }
-          );
-
-        }
+      button.classList.add(
+        "active"
       );
-
-
-      giftList.appendChild(
-        card
-      );
-
     }
 
 
-    function renderPagination() {
+    button.onclick =
+      function () {
 
-      pagination.innerHTML = "";
-
-
-      const receivedGifts =
-        allGifts.filter(
-          gift =>
-            receivedIds.has(
-              gift.id
-            )
-        );
-
-
-      const totalPages =
-        Math.ceil(
-          receivedGifts.length /
-          RECEIVED_PER_PAGE
-        );
-
-
-      /*
-        受け取り済みが20件以下なら
-        ページ番号を表示しない
-      */
-
-      if (
-        totalPages <= 1
-      ) {
-
-        return;
-
-      }
-
-
-      /*
-        前へ
-      */
-
-      const previous =
-        document.createElement(
-          "button"
-        );
-
-      previous.className =
-        "page-button";
-
-      previous.textContent =
-        "‹ 前へ";
-
-      previous.disabled =
-        currentPage === 1;
-
-
-      previous.addEventListener(
-        "click",
-        function () {
-
-          if (
-            currentPage > 1
-          ) {
-
-            currentPage--;
-
-            renderGifts();
-
-            renderPagination();
-
-            window.scrollTo({
-              top: 0,
-              behavior: "smooth"
-            });
-
-          }
-
-        }
-      );
-
-
-      pagination.appendChild(
-        previous
-      );
-
-
-      /*
-        ページ番号
-      */
-
-      for (
-        let page = 1;
-        page <= totalPages;
-        page++
-      ) {
-
-        const pageButton =
-          document.createElement(
-            "button"
-          );
-
-        pageButton.className =
-          "page-button";
-
-
-        if (
-          page === currentPage
-        ) {
-
-          pageButton.classList.add(
-            "active"
-          );
-
-        }
-
-
-        pageButton.textContent =
+        currentPage =
           page;
 
+        renderGifts();
 
-        pageButton.addEventListener(
-          "click",
-          function () {
-
-            currentPage =
-              page;
-
-            renderGifts();
-
-            renderPagination();
-
-            window.scrollTo({
-              top: 0,
-              behavior: "smooth"
-            });
-
-          }
-        );
+        renderPagination();
+      };
 
 
-        pagination.appendChild(
-          pageButton
-        );
+    pagination.appendChild(
+      button
+    );
+  }
 
+
+  const next =
+    document.createElement(
+      "button"
+    );
+
+
+  next.className =
+    "page-button";
+
+
+  next.textContent =
+    "次へ ›";
+
+
+  next.disabled =
+    currentPage ===
+    totalPages;
+
+
+  next.onclick =
+    function () {
+
+      if (
+        currentPage <
+        totalPages
+      ) {
+
+        currentPage++;
+
+        renderGifts();
+
+        renderPagination();
       }
+    };
 
 
-      /*
-        次へ
-      */
-
-      const next =
-        document.createElement(
-          "button"
-        );
-
-      next.className =
-        "page-button";
-
-      next.textContent =
-        "次へ ›";
-
-      next.disabled =
-        currentPage === totalPages;
+  pagination.appendChild(
+    next
+  );
+}
 
 
-      next.addEventListener(
-        "click",
-        function () {
+/* =========================
+   初回
+========================= */
 
-          if (
-            currentPage <
-            totalPages
-          ) {
+loadGifts();
 
-            currentPage++;
-
-            renderGifts();
-
-            renderPagination();
-
-            window.scrollTo({
-              top: 0,
-              behavior: "smooth"
-            });
-
-          }
-
-        }
-      );
+updateTimeDisplay();
 
 
-      pagination.appendChild(
-        next
-      );
+/* 時刻 */
 
-    }
-
-
-    /*
-      初回読み込み
-    */
-
-    loadGifts();
+setInterval(
+  updateTimeDisplay,
+  60000
+);
 
 
-    /*
-      時刻を1分ごとに更新
-    */
+/* Gift一覧 */
 
-    updateTimeDisplay();
+setInterval(
+  loadGifts,
+  30000
+);
 
-    setInterval(
-      updateTimeDisplay,
-      60000
-    );
-
-
-    /*
-      Gift一覧と件数を
-      30秒ごとに自動更新
-    */
-
-    setInterval(
-      loadGifts,
-      30000
-    );
-
-  </script>
+</script>
 
 </body>
 </html>
