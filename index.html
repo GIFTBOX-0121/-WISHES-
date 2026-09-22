@@ -1,106 +1,234 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>iTunes GIFT</title>
 
-<title>Gift Check</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<style>
-* {
-  box-sizing: border-box;
-}
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f7f7f7;
+      margin: 0;
+      padding: 30px 15px;
+      color: #333;
+    }
 
-body {
-  margin: 0;
-  font-family:
-    -apple-system,
-    BlinkMacSystemFont,
-    "Helvetica Neue",
-    "Hiragino Kaku Gothic ProN",
-    "Yu Gothic",
-    sans-serif;
-  background: #f7f8fc;
-  color: #333;
-}
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
 
-.container {
-  max-width: 600px;
-  margin: 0 auto;
-  padding: 50px 20px;
-}
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+    }
 
-header {
-  text-align: center;
-  margin-bottom: 35px;
-}
+    .gift-card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 15px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
 
-header h1 {
-  margin: 0 0 10px;
-  font-size: 28px;
-}
+    .gift-title {
+      font-weight: bold;
+      margin-bottom: 15px;
+    }
 
-header p {
-  margin: 0;
-  color: #777;
-  font-size: 14px;
-}
+    button {
+      width: 100%;
+      padding: 13px;
+      border: none;
+      border-radius: 8px;
+      background: #333;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
 
-.service-button {
-  display: block;
-  width: 100%;
-  padding: 20px;
-  margin-bottom: 16px;
-  background: white;
-  color: #333;
-  text-decoration: none;
-  text-align: center;
-  border-radius: 16px;
-  box-shadow: 0 3px 12px rgba(0,0,0,0.06);
-  font-size: 17px;
-  font-weight: bold;
-}
+    button:disabled {
+      background: #aaa;
+      cursor: default;
+    }
 
-.service-button:active {
-  transform: scale(0.98);
-}
+    .code-box {
+      margin-top: 15px;
+      padding: 15px;
+      background: #f1f1f1;
+      border-radius: 8px;
+      word-break: break-all;
+      font-weight: bold;
+    }
 
-.note {
-  margin-top: 35px;
-  text-align: center;
-  font-size: 12px;
-  color: #999;
-}
-</style>
+    .copy-button {
+      margin-top: 10px;
+      background: #666;
+    }
 
+    .received {
+      color: #999;
+      text-align: center;
+      padding: 10px 0;
+    }
+
+    .back {
+      display: block;
+      text-align: center;
+      margin-top: 30px;
+      color: #555;
+      text-decoration: none;
+    }
+  </style>
 </head>
 
 <body>
 
-<div class="container">
+  <div class="container">
+    <h1>🎁 iTunes GIFT</h1>
 
-  <header>
-    <h1>🎁 Gift Check</h1>
-    <p>受け取りたいギフトを選んでね</p>
-  </header>
+    <div id="gift-list">
+      読み込み中...
+    </div>
 
-  <a class="service-button" href="itunes.html">
-    🎵 iTunes
-  </a>
-
-  <a class="service-button" href="recochoku.html">
-    🎵 レコチョク
-  </a>
-
-  <a class="service-button" href="mumo.html">
-    🎵 mu-mo
-  </a>
-
-  <div class="note">
-    Gift Check
+    <a href="index.html" class="back">← サービス選択に戻る</a>
   </div>
 
-</div>
+  <script>
+    const SUPABASE_URL = "https://cgnluuynrurbsipwwluo.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_pZbtlCfKh1BVOxHaeXBIAA_CvfP0o0q";
+
+    const supabase = window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_KEY
+    );
+
+    const giftList = document.getElementById("gift-list");
+
+    function escapeHtml(text) {
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    async function loadGifts() {
+      giftList.innerHTML = "読み込み中...";
+
+      const { data: gifts, error: giftsError } = await supabase
+        .from("gifts")
+        .select("id, gift_code")
+        .eq("service", "itunes")
+        .order("id", { ascending: true });
+
+      if (giftsError) {
+        giftList.innerHTML = "ギフトの読み込みに失敗しました。";
+        console.error(giftsError);
+        return;
+      }
+
+      const { data: receipts, error: receiptsError } = await supabase
+        .from("gift_receipts")
+        .select("gift_id");
+
+      if (receiptsError) {
+        giftList.innerHTML = "受け取り状況の読み込みに失敗しました。";
+        console.error(receiptsError);
+        return;
+      }
+
+      const receivedIds = new Set(
+        receipts.map(receipt => receipt.gift_id)
+      );
+
+      giftList.innerHTML = "";
+
+      if (!gifts || gifts.length === 0) {
+        giftList.innerHTML = "<p>現在、受け取れるギフトはありません。</p>";
+        return;
+      }
+
+      gifts.forEach((gift, index) => {
+        const card = document.createElement("div");
+        card.className = "gift-card";
+
+        const title = document.createElement("div");
+        title.className = "gift-title";
+        title.textContent = `Gift ${String(index + 1).padStart(3, "0")}`;
+
+        card.appendChild(title);
+
+        if (receivedIds.has(gift.id)) {
+          const received = document.createElement("div");
+          received.className = "received";
+          received.textContent = "受け取り済み";
+          card.appendChild(received);
+        } else {
+          const button = document.createElement("button");
+          button.textContent = "コードを受け取る";
+
+          button.addEventListener("click", async () => {
+            button.disabled = true;
+            button.textContent = "受け取り中...";
+
+            const { error } = await supabase
+              .from("gift_receipts")
+              .insert({
+                gift_id: gift.id,
+                received_at: new Date().toISOString()
+              });
+
+            if (error) {
+              console.error(error);
+              alert("受け取りに失敗しました。");
+              button.disabled = false;
+              button.textContent = "コードを受け取る";
+              return;
+            }
+
+            card.innerHTML = "";
+
+            const newTitle = document.createElement("div");
+            newTitle.className = "gift-title";
+            newTitle.textContent = `Gift ${String(index + 1).padStart(3, "0")}`;
+
+            const codeBox = document.createElement("div");
+            codeBox.className = "code-box";
+            codeBox.textContent = gift.gift_code;
+
+            const copyButton = document.createElement("button");
+            copyButton.className = "copy-button";
+            copyButton.textContent = "コードをコピー";
+
+            copyButton.addEventListener("click", async () => {
+              try {
+                await navigator.clipboard.writeText(gift.gift_code);
+                copyButton.textContent = "コピーしました！";
+
+                setTimeout(() => {
+                  copyButton.textContent = "コードをコピー";
+                }, 2000);
+              } catch (e) {
+                alert("コピーできませんでした。コードを長押ししてコピーしてください。");
+              }
+            });
+
+            card.appendChild(newTitle);
+            card.appendChild(codeBox);
+            card.appendChild(copyButton);
+          });
+
+          card.appendChild(button);
+        }
+
+        giftList.appendChild(card);
+      });
+    }
+
+    loadGifts();
+  </script>
 
 </body>
 </html>
