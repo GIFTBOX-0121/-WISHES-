@@ -1,16 +1,273 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>mu-mo GIFT</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>mu-mo GIFT</title>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    "Helvetica Neue",
+    "Hiragino Kaku Gothic ProN",
+    "Yu Gothic",
+    sans-serif;
+  background: #f7f8fc;
+  color: #333;
+}
+
+.container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 32px 20px 50px;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+header h1 {
+  margin: 0 0 8px;
+  font-size: 28px;
+}
+
+header p {
+  margin: 0;
+  color: #777;
+  font-size: 14px;
+}
+
+.gift {
+  background: white;
+  border-radius: 16px;
+  padding: 18px;
+  margin-bottom: 14px;
+  box-shadow: 0 3px 12px rgba(0,0,0,0.06);
+}
+
+.gift-title {
+  font-size: 17px;
+  font-weight: bold;
+  margin-bottom: 14px;
+}
+
+.receive-button {
+  width: 100%;
+  border: none;
+  border-radius: 10px;
+  padding: 13px;
+  background: #333;
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.open-button {
+  display: block;
+  width: 100%;
+  border-radius: 10px;
+  padding: 13px;
+  background: #333;
+  color: white;
+  text-align: center;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.note {
+  margin-top: 28px;
+  text-align: center;
+  font-size: 12px;
+  color: #999;
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+const SUPABASE_URL = "https://cgnluuynrurbsipwwluo.supabase.co";
+const SUPABASE_KEY = "sb_publishable_pZbtlCfKh1BVOxHaeXBIAA_CvfP0o0q";
+
+const supabaseClient = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
+</script>
+
 </head>
 
 <body>
 
-  <h1>🎁 mu-mo GIFT</h1>
+<div class="container">
 
-  <p>受け取りたいギフトを選んでください</p>
+  <header>
+    <h1>🎁 mu-mo GIFT</h1>
+    <p>受け取りたいギフトを選んでね</p>
+  </header>
+
+  <div id="gift-list">
+    <p style="text-align:center;color:#999;">読み込み中…</p>
+  </div>
+
+  <div class="note">
+    Gift Check
+  </div>
+
+</div>
+
+<script>
+
+async function loadGifts() {
+
+  const giftList = document.getElementById("gift-list");
+
+  const { data: gifts, error: giftError } =
+    await supabaseClient
+      .from("gifts")
+      .select("id, gift_code")
+      .order("id", { ascending: true });
+
+  if (giftError) {
+    console.error(giftError);
+
+    giftList.innerHTML =
+      "<p style='text-align:center;color:#c66;'>ギフトの読み込みに失敗しました。</p>";
+
+    return;
+  }
+
+  if (!gifts || gifts.length === 0) {
+
+    giftList.innerHTML =
+      "<p style='text-align:center;color:#999;'>現在ギフトはありません。</p>";
+
+    return;
+  }
+
+  const { data: receipts, error: receiptError } =
+    await supabaseClient
+      .from("gift_receipts")
+      .select("gift_id");
+
+  if (receiptError) {
+    console.error(receiptError);
+  }
+
+  const receivedIds = new Set(
+    (receipts || []).map(receipt => receipt.gift_id)
+  );
+
+  giftList.innerHTML = "";
+
+  gifts.forEach((gift, index) => {
+
+    const isReceived = receivedIds.has(gift.id);
+
+    const giftElement = document.createElement("div");
+
+    giftElement.className = "gift";
+
+    if (isReceived) {
+
+      giftElement.innerHTML = `
+        <div class="gift-title">
+          🎵 Gift ${String(index + 1).padStart(3, "0")}
+        </div>
+
+        <p style="margin:0;color:#999;font-size:14px;">
+          受け取り済み
+        </p>
+      `;
+
+    } else {
+
+      giftElement.innerHTML = `
+        <div class="gift-title">
+          🎵 Gift ${String(index + 1).padStart(3, "0")}
+        </div>
+
+        <button class="receive-button">
+          ギフトを受け取る
+        </button>
+      `;
+
+      const button =
+        giftElement.querySelector(".receive-button");
+
+      button.addEventListener("click", async () => {
+
+        button.disabled = true;
+        button.textContent = "受け取り中…";
+
+        const { error } =
+          await supabaseClient
+            .from("gift_receipts")
+            .insert({
+              gift_id: gift.id,
+              received_at: new Date().toISOString()
+            });
+
+        if (error) {
+
+          console.error(error);
+
+          button.disabled = false;
+          button.textContent = "ギフトを受け取る";
+
+          alert(
+            "受け取りに失敗しました。もう一度試してください。"
+          );
+
+          return;
+        }
+
+        giftElement.innerHTML = `
+          <div class="gift-title">
+            🎵 Gift ${String(index + 1).padStart(3, "0")}
+          </div>
+
+          <a
+            class="open-button"
+            href="${escapeHtml(gift.gift_code)}"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            ギフトを開く
+          </a>
+        `;
+
+      });
+
+    }
+
+    giftList.appendChild(giftElement);
+
+  });
+
+}
+
+function escapeHtml(text) {
+
+  const div = document.createElement("div");
+
+  div.textContent = text ?? "";
+
+  return div.innerHTML;
+
+}
+
+loadGifts();
+
+</script>
 
 </body>
 </html>
