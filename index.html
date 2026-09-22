@@ -186,7 +186,7 @@ async function loadGifts() {
       const { error } = await supabaseClient.from("gift_receipts")
         .insert({
           gift_id: gift.id,
-          recived_at: new Date().toISOString()
+          received_at: new Date().toISOString()
         });
 
       if (error) {
