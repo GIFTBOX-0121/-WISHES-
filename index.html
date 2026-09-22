@@ -18,21 +18,15 @@ body {
     sans-serif;
 
   background: #f7f7f7;
-
   margin: 0;
-
   padding: 30px 15px;
-
   color: #333;
 }
 
 
 .container {
-
   max-width: 600px;
-
   margin: 0 auto;
-
   text-align: center;
 }
 
@@ -40,11 +34,8 @@ body {
 /* タイトル */
 
 h1 {
-
   margin: 0 0 20px;
-
   font-size: 28px;
-
   letter-spacing: 1px;
 }
 
@@ -52,17 +43,11 @@ h1 {
 /* メイン画像 */
 
 .main-image {
-
   display: block;
-
   width: 100%;
-
   max-width: 500px;
-
   height: auto;
-
   margin: 0 auto 20px;
-
   border-radius: 12px;
 }
 
@@ -70,9 +55,7 @@ h1 {
 /* 区切り線 */
 
 .line {
-
   border-top: 1px solid #ddd;
-
   margin: 20px 0;
 }
 
@@ -80,11 +63,8 @@ h1 {
 /* クイズエリア */
 
 .quiz-area {
-
   background: white;
-
   padding: 24px 18px;
-
   border-radius: 14px;
 
   box-shadow:
@@ -95,33 +75,24 @@ h1 {
 /* 質問 */
 
 .question {
-
   font-size: 16px;
-
   font-weight: bold;
-
   line-height: 1.8;
-
   margin-bottom: 20px;
 }
 
 
-/* 入力 */
+/* 入力欄 */
 
 .answer-input {
-
   box-sizing: border-box;
-
   width: 100%;
-
   padding: 15px;
 
   border: 1px solid #ccc;
-
   border-radius: 9px;
 
   font-size: 16px;
-
   text-align: center;
 
   outline: none;
@@ -129,31 +100,24 @@ h1 {
 
 
 .answer-input:focus {
-
   border-color: #777;
 }
 
 
-/* 送信 */
+/* 送信ボタン */
 
 .submit-button {
-
   width: 100%;
-
   margin-top: 12px;
-
   padding: 14px;
 
   border: none;
-
   border-radius: 9px;
 
   background: #333;
-
   color: white;
 
   font-size: 16px;
-
   font-weight: bold;
 
   cursor: pointer;
@@ -161,21 +125,17 @@ h1 {
 
 
 .submit-button:active {
-
   transform: scale(0.98);
 }
 
 
-/* 不正解 */
+/* 不正解メッセージ */
 
 .error-message {
-
   min-height: 22px;
-
   margin-top: 12px;
 
   font-size: 14px;
-
   color: #d94b4b;
 }
 
@@ -183,13 +143,11 @@ h1 {
 /* サービス選択 */
 
 .service-area {
-
   display: none;
 }
 
 
 .service-area.show {
-
   display: block;
 }
 
@@ -197,27 +155,22 @@ h1 {
 /* サービスボタン */
 
 .service-button {
-
   display: block;
-
   box-sizing: border-box;
 
   width: 100%;
 
   margin-bottom: 14px;
-
   padding: 17px;
 
   border-radius: 10px;
 
   background: #333;
-
   color: white;
 
   text-decoration: none;
 
   font-size: 17px;
-
   font-weight: bold;
 
   box-shadow:
@@ -229,15 +182,13 @@ h1 {
 
 
 .service-button:active {
-
   transform: scale(0.98);
 }
 
 
-/* 切り替え時 */
+/* 正解後の表示 */
 
 .fade-in {
-
   animation:
     fadeIn 0.4s ease;
 }
@@ -246,7 +197,6 @@ h1 {
 @keyframes fadeIn {
 
   from {
-
     opacity: 0;
 
     transform:
@@ -254,14 +204,12 @@ h1 {
   }
 
   to {
-
     opacity: 1;
 
     transform:
       translateY(0);
   }
 }
-
 
 </style>
 </head>
@@ -382,7 +330,6 @@ mu-mo
 </div>
 
 
-
 </div>
 
 
@@ -390,8 +337,18 @@ mu-mo
 <script>
 
 
+/* =========================
+   正解
+========================= */
+
+
 const CORRECT_ANSWER =
   "ぶんぶんはろーすたーず";
+
+
+/* =========================
+   各パーツ
+========================= */
 
 
 const quizArea =
@@ -434,30 +391,99 @@ function normalizeAnswer(text) {
 
   return text
 
-    /* 前後の空白 */
+    /* 前後の空白を削除 */
 
     .trim()
 
-    /* 全角スペース */
+    /* 全角スペースを削除 */
 
     .replace(
       /　/g,
       ""
     )
 
-    /* 半角スペース */
+    /* 半角スペース等を削除 */
 
     .replace(
       /\s/g,
       ""
-
     );
 }
 
 
 
 /* =========================
-   判定
+   サービス選択を表示
+========================= */
+
+
+function showServices(withAnimation = true) {
+
+
+  /*
+    クイズを消す
+  */
+
+  quizArea.style.display =
+    "none";
+
+
+  /*
+    サービスを表示
+  */
+
+  serviceArea.classList.add(
+    "show"
+  );
+
+
+  /*
+    正解した直後だけ
+    ふわっと表示
+  */
+
+  if (withAnimation) {
+
+    serviceArea.classList.add(
+      "fade-in"
+    );
+
+  }
+
+}
+
+
+
+/* =========================
+   過去に正解済みか確認
+========================= */
+
+
+const alreadyAuthenticated =
+  localStorage.getItem(
+    "giftbox_authenticated"
+  );
+
+
+if (
+  alreadyAuthenticated ===
+  "true"
+) {
+
+
+  /*
+    以前に正解済みなら
+    クイズを出さない
+  */
+
+  showServices(false);
+
+}
+
+
+
+/* =========================
+   回答判定
 ========================= */
 
 
@@ -482,26 +508,21 @@ function checkAnswer() {
 
 
     /*
-      クイズを消す
+      正解したことを
+      このブラウザに保存
     */
 
-    quizArea.style.display =
-      "none";
+    localStorage.setItem(
+      "giftbox_authenticated",
+      "true"
+    );
 
 
     /*
-      同じ場所に
-      サービス選択を表示
+      サービス選択へ切り替え
     */
 
-    serviceArea.classList.add(
-      "show"
-    );
-
-
-    serviceArea.classList.add(
-      "fade-in"
-    );
+    showServices(true);
 
 
   } else {
@@ -563,8 +584,10 @@ answerInput.addEventListener(
 
 
 
-/* 入力を始めたら
-   エラー表示を消す */
+/* =========================
+   再入力したら
+   エラーを消す
+========================= */
 
 
 answerInput.addEventListener(
