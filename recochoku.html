@@ -47,11 +47,41 @@ h1 {
   margin: 14px 0;
 }
 
+.control-area {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 5px 8px;
+}
+
+.add-side {
+  width: 46%;
+}
+
+.stats-side {
+  width: 54%;
+  text-align: right;
+}
+
+.open-add-button {
+  width: 100%;
+  padding: 14px 10px;
+  border: none;
+  border-radius: 10px;
+  background: #333;
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
 .counter {
   font-size: 18px;
   font-weight: bold;
-  margin-bottom: 6px;
   color: #d94b4b;
+  margin-bottom: 5px;
+  white-space: nowrap;
 }
 
 .time {
@@ -63,6 +93,52 @@ h1 {
 .total {
   font-size: 13px;
   color: #777;
+}
+
+.add-form {
+  display: none;
+  background: white;
+  padding: 16px;
+  margin: 12px 0 5px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.add-form.show {
+  display: block;
+}
+
+.add-label {
+  text-align: left;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.add-input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 14px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 16px;
+  outline: none;
+}
+
+.submit-add-button {
+  width: 100%;
+  padding: 14px;
+  margin-top: 10px;
+  border: none;
+  border-radius: 8px;
+  background: #333;
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.submit-add-button:disabled {
+  background: #aaa;
 }
 
 .gift-card {
@@ -141,6 +217,17 @@ h1 {
   color: #555;
   text-decoration: none;
 }
+
+@media (max-width: 400px) {
+  .control-area { gap: 10px; }
+  .add-side { width: 42%; }
+  .stats-side { width: 58%; }
+  .open-add-button {
+    font-size: 14px;
+    padding: 13px 6px;
+  }
+  .counter { font-size: 16px; }
+}
 </style>
 </head>
 
@@ -160,14 +247,51 @@ h1 {
 
 <div class="line"></div>
 
-<div class="counter" id="counter">
-未受け取り🎁0件
+<div class="control-area">
+
+  <div class="add-side">
+    <button id="open-add-button" class="open-add-button">
+      🎁を追加
+    </button>
+  </div>
+
+  <div class="stats-side">
+
+    <div class="counter" id="counter">
+      未受け取り🎁0件
+    </div>
+
+    <div class="time" id="update-time"></div>
+
+    <div class="total" id="total">
+      Total：0件
+    </div>
+
+  </div>
+
 </div>
 
-<div class="time" id="update-time"></div>
+<div id="add-form" class="add-form">
 
-<div class="total" id="total">
-Total：0件
+  <div class="add-label">
+    レコチョク Gift URL
+  </div>
+
+  <input
+    id="gift-input"
+    class="add-input"
+    type="url"
+    placeholder="URLを入力"
+    autocomplete="off"
+  >
+
+  <button
+    id="submit-add-button"
+    class="submit-add-button"
+  >
+    🎁を追加
+  </button>
+
 </div>
 
 <div class="line"></div>
@@ -193,25 +317,25 @@ const SUPABASE_KEY =
 "sb_publishable_pZbtlCfKh1BVOxHaeXBIAA_CvfP0o0q";
 
 const client =
-window.supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_KEY
-);
+window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-const giftList =
-document.getElementById("gift-list");
+const giftList = document.getElementById("gift-list");
+const pagination = document.getElementById("pagination");
+const counter = document.getElementById("counter");
+const total = document.getElementById("total");
+const updateTime = document.getElementById("update-time");
 
-const pagination =
-document.getElementById("pagination");
+const openAddButton =
+document.getElementById("open-add-button");
 
-const counter =
-document.getElementById("counter");
+const addForm =
+document.getElementById("add-form");
 
-const total =
-document.getElementById("total");
+const giftInput =
+document.getElementById("gift-input");
 
-const updateTime =
-document.getElementById("update-time");
+const submitAddButton =
+document.getElementById("submit-add-button");
 
 const RECEIVED_PER_PAGE = 20;
 
@@ -238,6 +362,139 @@ function updateTimeDisplay() {
 }
 
 
+/* 追加フォーム */
+
+openAddButton.addEventListener(
+  "click",
+  function () {
+
+    addForm.classList.toggle("show");
+
+    if (addForm.classList.contains("show")) {
+
+      setTimeout(
+        function () {
+          giftInput.focus();
+        },
+        100
+      );
+    }
+  }
+);
+
+
+/* Gift追加 */
+
+submitAddButton.addEventListener(
+  "click",
+  async function () {
+
+    const giftUrl =
+      giftInput.value.trim();
+
+
+    if (!giftUrl) {
+
+      alert("URLを入力してください。");
+
+      return;
+    }
+
+
+    let checkedUrl;
+
+    try {
+
+      checkedUrl =
+        new URL(giftUrl);
+
+      if (
+        checkedUrl.protocol !== "https:" &&
+        checkedUrl.protocol !== "http:"
+      ) {
+        throw new Error();
+      }
+
+    } catch {
+
+      alert("正しいURLを入力してください。");
+
+      return;
+    }
+
+
+    submitAddButton.disabled = true;
+
+    submitAddButton.textContent =
+      "追加中...";
+
+
+    const { error } =
+      await client
+        .from("gifts")
+        .insert({
+          service: "recochoku",
+          gift_code: checkedUrl.href
+        });
+
+
+    if (error) {
+
+      console.error(error);
+
+      submitAddButton.disabled = false;
+
+      submitAddButton.textContent =
+        "🎁を追加";
+
+      alert("Giftの追加に失敗しました。");
+
+      return;
+    }
+
+
+    giftInput.value = "";
+
+
+    submitAddButton.textContent =
+      "☆ 𝑻𝒉𝒂𝒏𝒌 𝒚𝒐𝒖 ☆";
+
+
+    await loadGifts();
+
+
+    setTimeout(
+      function () {
+
+        submitAddButton.disabled = false;
+
+        submitAddButton.textContent =
+          "🎁を追加";
+
+        giftInput.focus();
+
+      },
+      1000
+    );
+  }
+);
+
+
+giftInput.addEventListener(
+  "keydown",
+  function (event) {
+
+    if (
+      event.key === "Enter" &&
+      !submitAddButton.disabled
+    ) {
+
+      submitAddButton.click();
+    }
+  }
+);
+
+
 async function loadGifts() {
 
   const { data: gifts, error } =
@@ -247,7 +504,10 @@ async function loadGifts() {
       .eq("service", "recochoku")
       .order("id", { ascending: true });
 
+
   if (error) {
+
+    console.error(error);
 
     giftList.innerHTML =
       `<div class="error">
@@ -258,12 +518,18 @@ async function loadGifts() {
   }
 
 
-  const { data: receipts, error: receiptError } =
+  const {
+    data: receipts,
+    error: receiptError
+  } =
     await client
       .from("gift_receipts")
       .select("gift_id");
 
+
   if (receiptError) {
+
+    console.error(receiptError);
 
     giftList.innerHTML =
       `<div class="error">
@@ -304,6 +570,7 @@ async function loadGifts() {
       gift => receivedIds.has(gift.id)
     ).length;
 
+
   const totalPages =
     Math.max(
       1,
@@ -312,9 +579,11 @@ async function loadGifts() {
       )
     );
 
+
   if (currentPage > totalPages) {
     currentPage = totalPages;
   }
+
 
   renderGifts();
   renderPagination();
@@ -325,24 +594,29 @@ function renderGifts() {
 
   giftList.innerHTML = "";
 
+
   const unreceived =
     allGifts.filter(
       gift => !receivedIds.has(gift.id)
     );
+
 
   const received =
     allGifts.filter(
       gift => receivedIds.has(gift.id)
     );
 
+
   const start =
     (currentPage - 1) * RECEIVED_PER_PAGE;
+
 
   const receivedPage =
     received.slice(
       start,
       start + RECEIVED_PER_PAGE
     );
+
 
   const display =
     [
@@ -404,8 +678,8 @@ function renderGift(gift) {
     async function () {
 
       /*
-        タップした瞬間に新しいタブを作る。
-        iPhone Safariのポップアップブロック対策。
+        iPhone Safari対策：
+        タップ直後に新しいタブを確保
       */
 
       const newTab =
@@ -452,10 +726,6 @@ function renderGift(gift) {
       }
 
 
-      /*
-        1人分を確保
-      */
-
       const { error } =
         await client
           .from("gift_receipts")
@@ -498,11 +768,6 @@ function renderGift(gift) {
       }
 
 
-      /*
-        確保成功した人だけ
-        新しいタブをGift URLへ
-      */
-
       if (newTab) {
 
         newTab.location.href =
@@ -510,22 +775,12 @@ function renderGift(gift) {
 
       } else {
 
-        /*
-          ブラウザ側で新規タブが
-          ブロックされた場合の予備
-        */
-
         window.location.href =
           giftUrl.href;
       }
 
 
-      /*
-        元ページは受け取り済みに更新
-      */
-
       await loadGifts();
-
     }
   );
 
@@ -547,8 +802,7 @@ function renderPagination() {
 
   const totalPages =
     Math.ceil(
-      received.length /
-      RECEIVED_PER_PAGE
+      received.length / RECEIVED_PER_PAGE
     );
 
 
@@ -580,6 +834,10 @@ function renderPagination() {
         renderGifts();
         renderPagination();
 
+        window.scrollTo({
+          top: 0,
+          behavior: "smooth"
+        });
       }
     };
 
@@ -619,6 +877,10 @@ function renderPagination() {
         renderGifts();
         renderPagination();
 
+        window.scrollTo({
+          top: 0,
+          behavior: "smooth"
+        });
       };
 
 
@@ -649,6 +911,10 @@ function renderPagination() {
         renderGifts();
         renderPagination();
 
+        window.scrollTo({
+          top: 0,
+          behavior: "smooth"
+        });
       }
     };
 
@@ -672,6 +938,5 @@ setInterval(
 );
 
 </script>
-
 </body>
 </html>
