@@ -303,7 +303,6 @@ h1 {
 
 <div class="line"></div>
 
-
 <div class="control-area">
 
   <div class="add-side">
@@ -316,7 +315,6 @@ h1 {
     </button>
 
   </div>
-
 
   <div class="stats-side">
 
@@ -342,7 +340,6 @@ h1 {
   </div>
 
 </div>
-
 
 <div
   id="add-form"
@@ -370,11 +367,9 @@ h1 {
 
 </div>
 
-
 <div class="line"></div>
 
 </header>
-
 
 <div id="gift-list"></div>
 
@@ -382,7 +377,6 @@ h1 {
   id="pagination"
   class="pagination"
 ></div>
-
 
 <a
   href="index.html"
@@ -407,7 +401,6 @@ window.supabase.createClient(
   SUPABASE_URL,
   SUPABASE_KEY
 );
-
 
 const giftList =
 document.getElementById("gift-list");
@@ -470,7 +463,6 @@ function updateTimeDisplay() {
       now.getMinutes()
     ).padStart(2, "0");
 
-
   updateTime.textContent =
     `${month}月${day}日 ${hours}:${minutes}時点`;
 }
@@ -487,7 +479,6 @@ openAddButton.addEventListener(
     addForm.classList.toggle(
       "show"
     );
-
 
     if (
       addForm.classList.contains(
@@ -519,7 +510,6 @@ submitAddButton.addEventListener(
     const giftCode =
       giftInput.value.trim();
 
-
     if (!giftCode) {
 
       alert(
@@ -529,16 +519,17 @@ submitAddButton.addEventListener(
       return;
     }
 
-
     submitAddButton.disabled =
       true;
-
 
     submitAddButton.textContent =
       "追加中...";
 
 
-    const { error } =
+    const {
+      data,
+      error
+    } =
       await client
         .from("gifts")
         .insert({
@@ -549,57 +540,56 @@ submitAddButton.addEventListener(
           gift_code:
             giftCode
 
-        });
+        })
+        .select();
 
 
     if (error) {
 
-      console.error(error);
-
+      console.error(
+        "Gift INSERT ERROR:",
+        error
+      );
 
       submitAddButton.disabled =
         false;
-
 
       submitAddButton.textContent =
         "🎁を追加";
 
 
       alert(
-        "Giftの追加に失敗しました。"
+        "Giftの追加に失敗しました。\n\n" +
+        "message: " +
+        (error.message || "なし") +
+        "\n\ncode: " +
+        (error.code || "なし") +
+        "\n\ndetails: " +
+        (error.details || "なし") +
+        "\n\nhint: " +
+        (error.hint || "なし")
       );
-
 
       return;
     }
 
 
-    /*
-      入力欄を即空にする
-    */
+    console.log(
+      "Gift INSERT SUCCESS:",
+      data
+    );
+
 
     giftInput.value =
       "";
 
 
-    /*
-      Thank you表示
-    */
-
     submitAddButton.textContent =
       "☆ 𝑻𝒉𝒂𝒏𝒌 𝒚𝒐𝒖 ☆";
 
 
-    /*
-      一覧・件数を即更新
-    */
-
     await loadGifts();
 
-
-    /*
-      1秒後に追加ボタンへ戻す
-    */
 
     setTimeout(
       function () {
@@ -607,15 +597,8 @@ submitAddButton.addEventListener(
         submitAddButton.disabled =
           false;
 
-
         submitAddButton.textContent =
           "🎁を追加";
-
-
-        /*
-          次のコードを
-          すぐ入力できる
-        */
 
         giftInput.focus();
 
@@ -1039,10 +1022,6 @@ function renderGift(gift) {
       }
 
 
-      /*
-        取得成功
-      */
-
       card.innerHTML = `
 
         <div class="code">
@@ -1326,15 +1305,11 @@ loadGifts();
 updateTimeDisplay();
 
 
-/* 時刻 */
-
 setInterval(
   updateTimeDisplay,
   60000
 );
 
-
-/* Gift一覧 */
 
 setInterval(
   loadGifts,
