@@ -10,7 +10,14 @@
 
   <style>
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+      font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Helvetica Neue",
+        "Hiragino Kaku Gothic ProN",
+        "Yu Gothic",
+        sans-serif;
+
       background: #f7f7f7;
       margin: 0;
       padding: 30px 15px;
@@ -32,10 +39,20 @@
       font-size: 28px;
     }
 
+    .stats {
+      margin-top: 10px;
+    }
+
+    .line {
+      border-top: 1px solid #ddd;
+      margin: 14px 0;
+    }
+
     .counter {
       font-size: 18px;
       font-weight: bold;
       margin-bottom: 6px;
+      color: #d94b4b;
     }
 
     .time {
@@ -136,22 +153,34 @@
   <div class="container">
 
     <header>
+
       <h1>iTunes</h1>
 
-      <div class="counter" id="counter">
-        未受け取り🎁0件
+      <div class="stats">
+
+        <div class="line"></div>
+
+        <div class="counter" id="counter">
+          未受け取り🎁0件
+        </div>
+
+        <div class="time" id="update-time">
+          9月22日 00:00時点
+        </div>
+
+        <div class="total" id="total">
+          Total：0件
+        </div>
+
+        <div class="line"></div>
+
       </div>
 
-      <div class="time" id="update-time">
-        9月22日 00:00時点
-      </div>
-
-      <div class="total" id="total">
-        Total：0件
-      </div>
     </header>
 
+
     <div id="gift-list"></div>
+
 
     <a href="index.html" class="back">
       ← サービス選択に戻る
@@ -268,10 +297,12 @@
         const totalCount =
           gifts.length;
 
+
         const receivedCount =
           gifts.filter(
             gift => receivedIds.has(gift.id)
           ).length;
+
 
         const unreceivedCount =
           totalCount - receivedCount;
@@ -280,15 +311,17 @@
         counter.textContent =
           `未受け取り🎁${unreceivedCount}件`;
 
+
         total.textContent =
           `Total：${totalCount}件`;
+
 
         updateTimeDisplay();
 
 
         /*
           未受け取りを上、
-          受け取り済みを下にする
+          受け取り済みを下
         */
 
         const sortedGifts =
@@ -370,11 +403,6 @@
                   "受け取り中...";
 
 
-                /*
-                  ここで初めて
-                  Giftを確保する
-                */
-
                 const { error } =
                   await client
                     .from("gift_receipts")
@@ -389,11 +417,6 @@
 
                   console.error(error);
 
-
-                  /*
-                    同じGiftを誰かが
-                    先に取得した場合
-                  */
 
                   if (
                     error.code === "23505"
@@ -425,10 +448,6 @@
                   return;
                 }
 
-
-                /*
-                  自分が取得成功
-                */
 
                 card.innerHTML = `
 
@@ -526,12 +545,6 @@
                       "処理中...";
 
 
-                    /*
-                      すでにDBには
-                      受け取り記録があるので、
-                      画面だけ受け取り済みにする
-                    */
-
                     card.innerHTML = `
                       <div class="received">
                         受け取り済み
@@ -570,29 +583,17 @@
     }
 
 
-    /*
-      最初に読み込み
-    */
-
     loadGifts();
 
 
-    /*
-      時刻表示を毎分更新
-    */
-
     updateTimeDisplay();
+
 
     setInterval(
       updateTimeDisplay,
       60000
     );
 
-
-    /*
-      Gift一覧・カウンターを
-      30秒ごとに自動更新
-    */
 
     setInterval(
       loadGifts,
