@@ -174,7 +174,6 @@ Total：0件
 
 </header>
 
-
 <div id="gift-list"></div>
 
 <div id="pagination" class="pagination"></div>
@@ -184,7 +183,6 @@ Total：0件
 </a>
 
 </div>
-
 
 <script>
 
@@ -199,7 +197,6 @@ window.supabase.createClient(
   SUPABASE_URL,
   SUPABASE_KEY
 );
-
 
 const giftList =
 document.getElementById("gift-list");
@@ -216,13 +213,10 @@ document.getElementById("total");
 const updateTime =
 document.getElementById("update-time");
 
-
 const RECEIVED_PER_PAGE = 20;
 
 let currentPage = 1;
-
 let allGifts = [];
-
 let receivedIds = new Set();
 
 
@@ -230,11 +224,8 @@ function updateTimeDisplay() {
 
   const now = new Date();
 
-  const month =
-    now.getMonth() + 1;
-
-  const day =
-    now.getDate();
+  const month = now.getMonth() + 1;
+  const day = now.getDate();
 
   const hours =
     String(now.getHours()).padStart(2, "0");
@@ -244,7 +235,6 @@ function updateTimeDisplay() {
 
   updateTime.textContent =
     `${month}月${day}日 ${hours}:${minutes}時点`;
-
 }
 
 
@@ -257,10 +247,7 @@ async function loadGifts() {
       .eq("service", "recochoku")
       .order("id", { ascending: true });
 
-
   if (error) {
-
-    console.error(error);
 
     giftList.innerHTML =
       `<div class="error">
@@ -276,10 +263,7 @@ async function loadGifts() {
       .from("gift_receipts")
       .select("gift_id");
 
-
   if (receiptError) {
-
-    console.error(receiptError);
 
     giftList.innerHTML =
       `<div class="error">
@@ -291,7 +275,6 @@ async function loadGifts() {
 
 
   allGifts = gifts || [];
-
 
   receivedIds =
     new Set(
@@ -310,10 +293,8 @@ async function loadGifts() {
   counter.textContent =
     `未受け取り🎁${unreceivedCount}件`;
 
-
   total.textContent =
     `Total：${allGifts.length}件`;
-
 
   updateTimeDisplay();
 
@@ -323,26 +304,20 @@ async function loadGifts() {
       gift => receivedIds.has(gift.id)
     ).length;
 
-
   const totalPages =
     Math.max(
       1,
       Math.ceil(
-        receivedCount /
-        RECEIVED_PER_PAGE
+        receivedCount / RECEIVED_PER_PAGE
       )
     );
-
 
   if (currentPage > totalPages) {
     currentPage = totalPages;
   }
 
-
   renderGifts();
-
   renderPagination();
-
 }
 
 
@@ -350,30 +325,24 @@ function renderGifts() {
 
   giftList.innerHTML = "";
 
-
   const unreceived =
     allGifts.filter(
       gift => !receivedIds.has(gift.id)
     );
-
 
   const received =
     allGifts.filter(
       gift => receivedIds.has(gift.id)
     );
 
-
   const start =
-    (currentPage - 1) *
-    RECEIVED_PER_PAGE;
-
+    (currentPage - 1) * RECEIVED_PER_PAGE;
 
   const receivedPage =
     received.slice(
       start,
       start + RECEIVED_PER_PAGE
     );
-
 
   const display =
     [
@@ -396,7 +365,6 @@ function renderGifts() {
 
 
   display.forEach(renderGift);
-
 }
 
 
@@ -405,8 +373,7 @@ function renderGift(gift) {
   const card =
     document.createElement("div");
 
-  card.className =
-    "gift-card";
+  card.className = "gift-card";
 
 
   if (receivedIds.has(gift.id)) {
@@ -429,14 +396,21 @@ function renderGift(gift) {
 
 
   const button =
-    card.querySelector(
-      ".receive-button"
-    );
+    card.querySelector(".receive-button");
 
 
   button.addEventListener(
     "click",
     async function () {
+
+      /*
+        タップした瞬間に新しいタブを作る。
+        iPhone Safariのポップアップブロック対策。
+      */
+
+      const newTab =
+        window.open("", "_blank");
+
 
       button.disabled = true;
 
@@ -444,11 +418,8 @@ function renderGift(gift) {
         "確認中...";
 
 
-      /*
-        URLとして正しいか確認
-      */
-
       let giftUrl;
+
 
       try {
 
@@ -464,6 +435,10 @@ function renderGift(gift) {
 
       } catch {
 
+        if (newTab) {
+          newTab.close();
+        }
+
         button.disabled = false;
 
         button.textContent =
@@ -478,7 +453,7 @@ function renderGift(gift) {
 
 
       /*
-        このGiftを確保
+        1人分を確保
       */
 
       const { error } =
@@ -493,12 +468,10 @@ function renderGift(gift) {
 
       if (error) {
 
-        console.error(error);
+        if (newTab) {
+          newTab.close();
+        }
 
-
-        /*
-          他の人が先に確保済み
-        */
 
         if (error.code === "23505") {
 
@@ -526,19 +499,38 @@ function renderGift(gift) {
 
 
       /*
-        確保できた人だけ
-        Gift URLへ移動
+        確保成功した人だけ
+        新しいタブをGift URLへ
       */
 
-      window.location.href =
-        giftUrl.href;
+      if (newTab) {
+
+        newTab.location.href =
+          giftUrl.href;
+
+      } else {
+
+        /*
+          ブラウザ側で新規タブが
+          ブロックされた場合の予備
+        */
+
+        window.location.href =
+          giftUrl.href;
+      }
+
+
+      /*
+        元ページは受け取り済みに更新
+      */
+
+      await loadGifts();
 
     }
   );
 
 
   giftList.appendChild(card);
-
 }
 
 
@@ -586,22 +578,13 @@ function renderPagination() {
         currentPage--;
 
         renderGifts();
-
         renderPagination();
 
-        window.scrollTo({
-          top: 0,
-          behavior: "smooth"
-        });
-
       }
-
     };
 
 
-  pagination.appendChild(
-    previous
-  );
+  pagination.appendChild(previous);
 
 
   for (
@@ -625,32 +608,21 @@ function renderPagination() {
       button.classList.add(
         "active"
       );
-
     }
 
 
     button.onclick =
       function () {
 
-        currentPage =
-          page;
+        currentPage = page;
 
         renderGifts();
-
         renderPagination();
-
-        window.scrollTo({
-          top: 0,
-          behavior: "smooth"
-        });
 
       };
 
 
-    pagination.appendChild(
-      button
-    );
-
+    pagination.appendChild(button);
   }
 
 
@@ -670,31 +642,18 @@ function renderPagination() {
   next.onclick =
     function () {
 
-      if (
-        currentPage <
-        totalPages
-      ) {
+      if (currentPage < totalPages) {
 
         currentPage++;
 
         renderGifts();
-
         renderPagination();
 
-        window.scrollTo({
-          top: 0,
-          behavior: "smooth"
-        });
-
       }
-
     };
 
 
-  pagination.appendChild(
-    next
-  );
-
+  pagination.appendChild(next);
 }
 
 
@@ -702,12 +661,10 @@ loadGifts();
 
 updateTimeDisplay();
 
-
 setInterval(
   updateTimeDisplay,
   60000
 );
-
 
 setInterval(
   loadGifts,
