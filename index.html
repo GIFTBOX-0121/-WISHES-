@@ -104,67 +104,117 @@ const supabase = window.supabase.createClient(
 
 <div class="container">
 
-<header>
-  <h1>🎁 Gift Check</h1>
-  <p>受け取ったギフトにチェックをつけてね</p>
-</header>
+  <header>
+    <h1>🎁 Gift Check</h1>
+    <p>受け取ったギフトにチェックをつけてね</p>
+  </header>
 
-<div class="gift">
-
-  <div class="gift-title">
-    🎵 Gift 001
+  <div id="gift-list">
+    <p style="text-align:center;color:#999;">読み込み中…</p>
   </div>
 
-  <div class="gift-code">
-    ここにギフトのコードやURLを表示
+  <div class="note">
+    Gift Check
   </div>
-
-  <label class="check-area">
-    <input type="checkbox">
-    <span>受け取りました</span>
-  </label>
 
 </div>
 
-<div class="gift">
+<script>
+async function loadGifts() {
+  const giftList = document.getElementById("gift-list");
 
-  <div class="gift-title">
-    🎵 Gift 002
-  </div>
+  const { data: gifts, error: giftError } = await supabase
+    .from("gift")
+    .select("id, gift_code")
+    .order("id", { ascending: true });
 
-  <div class="gift-code">
-    ここにギフトのコードやURLを表示
-  </div>
+  if (giftError) {
+    console.error(giftError);
+    giftList.innerHTML = "<p style='text-align:center;color:#c66;'>ギフトの読み込みに失敗しました。</p>";
+    return;
+  }
 
-  <label class="check-area">
-    <input type="checkbox">
-    <span>受け取りました</span>
-  </label>
+  if (!gifts || gifts.length === 0) {
+    giftList.innerHTML = "<p style='text-align:center;color:#999;'>現在ギフトはありません。</p>";
+    return;
+  }
 
-</div>
+  const { data: receipts, error: receiptError } = await supabase
+    .from("gift_receipts")
+    .select("gift_id");
 
-<div class="gift">
+  if (receiptError) {
+    console.error(receiptError);
+  }
 
-  <div class="gift-title">
-    🎵 Gift 003
-  </div>
+  const receivedIds = new Set(
+    (receipts || []).map(receipt => receipt.gift_id)
+  );
 
-  <div class="gift-code">
-    ここにギフトのコードやURLを表示
-  </div>
+  giftList.innerHTML = "";
 
-  <label class="check-area">
-    <input type="checkbox">
-    <span>受け取りました</span>
-  </label>
+  gifts.forEach((gift, index) => {
+    const isReceived = receivedIds.has(gift.id);
 
-</div>
+    const giftElement = document.createElement("div");
+    giftElement.className = "gift";
 
-<div class="note">
-  Gift Check
-</div>
+    giftElement.innerHTML = `
+      <div class="gift-title">
+        🎵 Gift ${String(index + 1).padStart(3, "0")}
+      </div>
 
-</div>
+      <div class="gift-code">
+        ${escapeHtml(gift.gift_code)}
+      </div>
+
+      <label class="check-area">
+        <input
+          type="checkbox"
+          ${isReceived ? "checked disabled" : ""}
+          data-gift-id="${gift.id}"
+        >
+        <span>${isReceived ? "受け取り済み" : "受け取りました"}</span>
+      </label>
+    `;
+
+    const checkbox = giftElement.querySelector("input");
+
+    checkbox.addEventListener("change", async () => {
+      if (!checkbox.checked) return;
+
+      checkbox.disabled = true;
+
+      const { error } = await supabase
+        .from("gift_receipts")
+        .insert({
+          gift_id: gift.id,
+          recived_at: new Date().toISOString()
+        });
+
+      if (error) {
+        console.error(error);
+        checkbox.checked = false;
+        checkbox.disabled = false;
+        alert("保存できませんでした。もう一度試してください。");
+        return;
+      }
+
+      checkbox.nextElementSibling.textContent = "受け取り済み";
+    });
+
+    giftList.appendChild(giftElement);
+  });
+}
+
+function escapeHtml(text) {
+  const div = document.createElement("div");
+  div.textContent = text ?? "";
+  return div.innerHTML;
+}
+
+loadGifts();
+</script>
 
 </body>
 </html>
