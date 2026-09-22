@@ -1,210 +1,720 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>レコチョク GIFT</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<title>レコチョク</title>
 
-  <style>
-    body {
-      font-family: sans-serif;
-      background: #f7f7f7;
-      margin: 0;
-      padding: 30px 15px;
-      color: #333;
-    }
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-    }
+<style>
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue",
+    "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+  background: #f7f7f7;
+  margin: 0;
+  padding: 30px 15px;
+  color: #333;
+}
 
-    h1 {
-      text-align: center;
-      margin-bottom: 30px;
-    }
+.container {
+  max-width: 600px;
+  margin: 0 auto;
+}
 
-    .gift-card {
-      background: white;
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 15px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    }
+header {
+  text-align: center;
+  margin-bottom: 25px;
+}
 
-    .gift-title {
-      font-weight: bold;
-      margin-bottom: 15px;
-    }
+h1 {
+  margin: 0 0 15px;
+  font-size: 28px;
+}
 
-    button {
-      width: 100%;
-      padding: 13px;
-      border: none;
-      border-radius: 8px;
-      background: #333;
-      color: white;
-      font-size: 16px;
-      cursor: pointer;
-    }
+.header-image {
+  display: block;
+  width: 100%;
+  max-width: 500px;
+  height: auto;
+  margin: 0 auto 15px;
+  border-radius: 12px;
+}
 
-    button:disabled {
-      background: #aaa;
-      cursor: default;
-    }
+.line {
+  border-top: 1px solid #ddd;
+  margin: 14px 0;
+}
 
-    .gift-link {
-      display: block;
-      margin-top: 15px;
-      padding: 13px;
-      background: #333;
-      color: white;
-      text-align: center;
-      text-decoration: none;
-      border-radius: 8px;
-    }
+.counter {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 6px;
+  color: #d94b4b;
+}
 
-    .received {
-      color: #999;
-      text-align: center;
-      padding: 10px 0;
-    }
+.time {
+  font-size: 12px;
+  color: #999;
+  margin-bottom: 3px;
+}
 
-    .back {
-      display: block;
-      text-align: center;
-      margin-top: 30px;
-      color: #555;
-      text-decoration: none;
-    }
-  </style>
+.total {
+  font-size: 13px;
+  color: #777;
+}
+
+.gift-card {
+  background: white;
+  padding: 20px;
+  margin-bottom: 15px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.receive-button {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 8px;
+  background: #333;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.receive-button:disabled {
+  background: #aaa;
+}
+
+.received {
+  text-align: center;
+  color: #999;
+  padding: 10px;
+}
+
+.error {
+  text-align: center;
+  color: #d00;
+  background: white;
+  padding: 15px;
+  border-radius: 10px;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 25px 0;
+}
+
+.page-button {
+  min-width: 40px;
+  height: 40px;
+  padding: 0 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: white;
+  color: #333;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.page-button.active {
+  background: #333;
+  color: white;
+  border-color: #333;
+}
+
+.page-button:disabled {
+  color: #aaa;
+  background: #f5f5f5;
+}
+
+.back {
+  display: block;
+  text-align: center;
+  margin-top: 25px;
+  color: #555;
+  text-decoration: none;
+}
+</style>
 </head>
 
 <body>
 
-  <div class="container">
-    <h1>🎁 レコチョク GIFT</h1>
+<div class="container">
 
-    <div id="gift-list">
-      読み込み中...
-    </div>
+<header>
 
-    <a href="index.html" class="back">← サービス選択に戻る</a>
-  </div>
+<h1>レコチョク</h1>
 
-  <script>
-    const SUPABASE_URL = "https://cgnluuynrurbsipwwluo.supabase.co";
-    const SUPABASE_KEY = "sb_publishable_pZbtlCfKh1BVOxHaeXBIAA_CvfP0o0q";
+<img
+  class="header-image"
+  src="24BAC62E-3563-42A4-9EE5-F72598664198.jpeg"
+  alt=""
+>
 
-    const supabase = window.supabase.createClient(
-      SUPABASE_URL,
-      SUPABASE_KEY
+<div class="line"></div>
+
+<div class="counter" id="counter">
+未受け取り🎁0件
+</div>
+
+<div class="time" id="update-time"></div>
+
+<div class="total" id="total">
+Total：0件
+</div>
+
+<div class="line"></div>
+
+</header>
+
+
+<div id="gift-list"></div>
+
+<div id="pagination" class="pagination"></div>
+
+<a href="index.html" class="back">
+← サービス選択に戻る
+</a>
+
+</div>
+
+
+<script>
+
+const SUPABASE_URL =
+"https://cgnluuynrurbsipwwluo.supabase.co";
+
+const SUPABASE_KEY =
+"sb_publishable_pZbtlCfKh1BVOxHaeXBIAA_CvfP0o0q";
+
+const client =
+window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
+
+
+const giftList =
+document.getElementById("gift-list");
+
+const pagination =
+document.getElementById("pagination");
+
+const counter =
+document.getElementById("counter");
+
+const total =
+document.getElementById("total");
+
+const updateTime =
+document.getElementById("update-time");
+
+
+const RECEIVED_PER_PAGE = 20;
+
+let currentPage = 1;
+
+let allGifts = [];
+
+let receivedIds = new Set();
+
+
+function updateTimeDisplay() {
+
+  const now = new Date();
+
+  const month =
+    now.getMonth() + 1;
+
+  const day =
+    now.getDate();
+
+  const hours =
+    String(now.getHours()).padStart(2, "0");
+
+  const minutes =
+    String(now.getMinutes()).padStart(2, "0");
+
+  updateTime.textContent =
+    `${month}月${day}日 ${hours}:${minutes}時点`;
+
+}
+
+
+async function loadGifts() {
+
+  const { data: gifts, error } =
+    await client
+      .from("gifts")
+      .select("id, gift_code, service")
+      .eq("service", "recochoku")
+      .order("id", { ascending: true });
+
+
+  if (error) {
+
+    console.error(error);
+
+    giftList.innerHTML =
+      `<div class="error">
+        Giftを読み込めませんでした。
+      </div>`;
+
+    return;
+  }
+
+
+  const { data: receipts, error: receiptError } =
+    await client
+      .from("gift_receipts")
+      .select("gift_id");
+
+
+  if (receiptError) {
+
+    console.error(receiptError);
+
+    giftList.innerHTML =
+      `<div class="error">
+        受け取り情報を読み込めませんでした。
+      </div>`;
+
+    return;
+  }
+
+
+  allGifts = gifts || [];
+
+
+  receivedIds =
+    new Set(
+      (receipts || []).map(
+        item => item.gift_id
+      )
     );
 
-    const giftList = document.getElementById("gift-list");
 
-    async function loadGifts() {
-      giftList.innerHTML = "読み込み中...";
+  const unreceivedCount =
+    allGifts.filter(
+      gift => !receivedIds.has(gift.id)
+    ).length;
 
-      const { data: gifts, error: giftsError } = await supabase
-        .from("gifts")
-        .select("id, gift_code")
-        .eq("service", "recochoku")
-        .order("id", { ascending: true });
 
-      if (giftsError) {
-        giftList.innerHTML = "ギフトの読み込みに失敗しました。";
-        console.error(giftsError);
-        return;
-      }
+  counter.textContent =
+    `未受け取り🎁${unreceivedCount}件`;
 
-      const { data: receipts, error: receiptsError } = await supabase
-        .from("gift_receipts")
-        .select("gift_id");
 
-      if (receiptsError) {
-        giftList.innerHTML = "受け取り状況の読み込みに失敗しました。";
-        console.error(receiptsError);
-        return;
-      }
+  total.textContent =
+    `Total：${allGifts.length}件`;
 
-      const receivedIds = new Set(
-        receipts.map(receipt => receipt.gift_id)
-      );
 
-      giftList.innerHTML = "";
+  updateTimeDisplay();
 
-      if (!gifts || gifts.length === 0) {
-        giftList.innerHTML = "<p>現在、受け取れるギフトはありません。</p>";
-        return;
-      }
 
-      gifts.forEach((gift, index) => {
-        const card = document.createElement("div");
-        card.className = "gift-card";
+  const receivedCount =
+    allGifts.filter(
+      gift => receivedIds.has(gift.id)
+    ).length;
 
-        const title = document.createElement("div");
-        title.className = "gift-title";
-        title.textContent = `Gift ${String(index + 1).padStart(3, "0")}`;
 
-        card.appendChild(title);
+  const totalPages =
+    Math.max(
+      1,
+      Math.ceil(
+        receivedCount /
+        RECEIVED_PER_PAGE
+      )
+    );
 
-        if (receivedIds.has(gift.id)) {
-          const received = document.createElement("div");
-          received.className = "received";
-          received.textContent = "受け取り済み";
-          card.appendChild(received);
-        } else {
-          const button = document.createElement("button");
-          button.textContent = "ギフトを受け取る";
 
-          button.addEventListener("click", async () => {
-            button.disabled = true;
-            button.textContent = "受け取り中...";
+  if (currentPage > totalPages) {
+    currentPage = totalPages;
+  }
 
-            const { error } = await supabase
-              .from("gift_receipts")
-              .insert({
-                gift_id: gift.id,
-                received_at: new Date().toISOString()
-              });
 
-            if (error) {
-              console.error(error);
-              alert("受け取りに失敗しました。");
-              button.disabled = false;
-              button.textContent = "ギフトを受け取る";
-              return;
-            }
+  renderGifts();
 
-            card.innerHTML = "";
+  renderPagination();
 
-            const newTitle = document.createElement("div");
-            newTitle.className = "gift-title";
-            newTitle.textContent = `Gift ${String(index + 1).padStart(3, "0")}`;
+}
 
-            const link = document.createElement("a");
-            link.className = "gift-link";
-            link.href = gift.gift_code;
-            link.target = "_blank";
-            link.rel = "noopener noreferrer";
-            link.textContent = "🎁 ギフトを開く";
 
-            card.appendChild(newTitle);
-            card.appendChild(link);
-          });
+function renderGifts() {
 
-          card.appendChild(button);
+  giftList.innerHTML = "";
+
+
+  const unreceived =
+    allGifts.filter(
+      gift => !receivedIds.has(gift.id)
+    );
+
+
+  const received =
+    allGifts.filter(
+      gift => receivedIds.has(gift.id)
+    );
+
+
+  const start =
+    (currentPage - 1) *
+    RECEIVED_PER_PAGE;
+
+
+  const receivedPage =
+    received.slice(
+      start,
+      start + RECEIVED_PER_PAGE
+    );
+
+
+  const display =
+    [
+      ...unreceived,
+      ...receivedPage
+    ];
+
+
+  if (display.length === 0) {
+
+    giftList.innerHTML =
+      `<div class="gift-card">
+        <div style="text-align:center;">
+          現在Giftはありません。
+        </div>
+      </div>`;
+
+    return;
+  }
+
+
+  display.forEach(renderGift);
+
+}
+
+
+function renderGift(gift) {
+
+  const card =
+    document.createElement("div");
+
+  card.className =
+    "gift-card";
+
+
+  if (receivedIds.has(gift.id)) {
+
+    card.innerHTML =
+      `<div class="received">
+        受け取り済み
+      </div>`;
+
+    giftList.appendChild(card);
+
+    return;
+  }
+
+
+  card.innerHTML =
+    `<button class="receive-button">
+      🎁 ギフトを受け取る
+    </button>`;
+
+
+  const button =
+    card.querySelector(
+      ".receive-button"
+    );
+
+
+  button.addEventListener(
+    "click",
+    async function () {
+
+      button.disabled = true;
+
+      button.textContent =
+        "確認中...";
+
+
+      /*
+        URLとして正しいか確認
+      */
+
+      let giftUrl;
+
+      try {
+
+        giftUrl =
+          new URL(gift.gift_code);
+
+        if (
+          giftUrl.protocol !== "https:" &&
+          giftUrl.protocol !== "http:"
+        ) {
+          throw new Error();
         }
 
-        giftList.appendChild(card);
-      });
+      } catch {
+
+        button.disabled = false;
+
+        button.textContent =
+          "🎁 ギフトを受け取る";
+
+        alert(
+          "このGiftのURLが正しくありません。"
+        );
+
+        return;
+      }
+
+
+      /*
+        このGiftを確保
+      */
+
+      const { error } =
+        await client
+          .from("gift_receipts")
+          .insert({
+            gift_id: gift.id,
+            received_at:
+              new Date().toISOString()
+          });
+
+
+      if (error) {
+
+        console.error(error);
+
+
+        /*
+          他の人が先に確保済み
+        */
+
+        if (error.code === "23505") {
+
+          alert(
+            "このGiftは他の方が受け取り済みです。"
+          );
+
+          await loadGifts();
+
+          return;
+        }
+
+
+        button.disabled = false;
+
+        button.textContent =
+          "🎁 ギフトを受け取る";
+
+        alert(
+          "受け取りに失敗しました。"
+        );
+
+        return;
+      }
+
+
+      /*
+        確保できた人だけ
+        Gift URLへ移動
+      */
+
+      window.location.href =
+        giftUrl.href;
+
+    }
+  );
+
+
+  giftList.appendChild(card);
+
+}
+
+
+function renderPagination() {
+
+  pagination.innerHTML = "";
+
+
+  const received =
+    allGifts.filter(
+      gift => receivedIds.has(gift.id)
+    );
+
+
+  const totalPages =
+    Math.ceil(
+      received.length /
+      RECEIVED_PER_PAGE
+    );
+
+
+  if (totalPages <= 1) {
+    return;
+  }
+
+
+  const previous =
+    document.createElement("button");
+
+  previous.className =
+    "page-button";
+
+  previous.textContent =
+    "‹ 前へ";
+
+  previous.disabled =
+    currentPage === 1;
+
+
+  previous.onclick =
+    function () {
+
+      if (currentPage > 1) {
+
+        currentPage--;
+
+        renderGifts();
+
+        renderPagination();
+
+        window.scrollTo({
+          top: 0,
+          behavior: "smooth"
+        });
+
+      }
+
+    };
+
+
+  pagination.appendChild(
+    previous
+  );
+
+
+  for (
+    let page = 1;
+    page <= totalPages;
+    page++
+  ) {
+
+    const button =
+      document.createElement("button");
+
+    button.className =
+      "page-button";
+
+    button.textContent =
+      page;
+
+
+    if (page === currentPage) {
+
+      button.classList.add(
+        "active"
+      );
+
     }
 
-    loadGifts();
-  </script>
+
+    button.onclick =
+      function () {
+
+        currentPage =
+          page;
+
+        renderGifts();
+
+        renderPagination();
+
+        window.scrollTo({
+          top: 0,
+          behavior: "smooth"
+        });
+
+      };
+
+
+    pagination.appendChild(
+      button
+    );
+
+  }
+
+
+  const next =
+    document.createElement("button");
+
+  next.className =
+    "page-button";
+
+  next.textContent =
+    "次へ ›";
+
+  next.disabled =
+    currentPage === totalPages;
+
+
+  next.onclick =
+    function () {
+
+      if (
+        currentPage <
+        totalPages
+      ) {
+
+        currentPage++;
+
+        renderGifts();
+
+        renderPagination();
+
+        window.scrollTo({
+          top: 0,
+          behavior: "smooth"
+        });
+
+      }
+
+    };
+
+
+  pagination.appendChild(
+    next
+  );
+
+}
+
+
+loadGifts();
+
+updateTimeDisplay();
+
+
+setInterval(
+  updateTimeDisplay,
+  60000
+);
+
+
+setInterval(
+  loadGifts,
+  30000
+);
+
+</script>
 
 </body>
 </html>
