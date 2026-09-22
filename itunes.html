@@ -34,18 +34,24 @@
       box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     }
 
-    .receive-button {
+    .receive-button,
+    .copy-button,
+    .complete-button {
       width: 100%;
       padding: 14px;
       border: none;
       border-radius: 8px;
-      background: #333;
-      color: white;
       font-size: 16px;
       cursor: pointer;
     }
 
-    .receive-button:disabled {
+    .receive-button {
+      background: #333;
+      color: white;
+    }
+
+    .receive-button:disabled,
+    .complete-button:disabled {
       background: #aaa;
     }
 
@@ -61,15 +67,15 @@
     }
 
     .copy-button {
-      width: 100%;
-      padding: 14px;
       margin-top: 10px;
-      border: none;
-      border-radius: 8px;
       background: #eee;
       color: #333;
-      font-size: 16px;
-      cursor: pointer;
+    }
+
+    .complete-button {
+      margin-top: 10px;
+      background: #333;
+      color: white;
     }
 
     .received {
@@ -109,6 +115,7 @@
     </a>
 
   </div>
+
 
   <script>
 
@@ -235,67 +242,36 @@
 
             button.addEventListener(
               "click",
-              async function () {
-
-                button.disabled = true;
-                button.textContent =
-                  "受け取り中...";
-
-
-                const { error } =
-                  await client
-                    .from("gift_receipts")
-                    .insert({
-                      gift_id: gift.id,
-                      received_at:
-                        new Date().toISOString()
-                    });
-
-
-                if (error) {
-
-                  console.error(error);
-
-                  button.disabled = false;
-                  button.textContent =
-                    "コードを受け取る";
-
-                  alert(
-                    "受け取りに失敗しました。\n" +
-                    error.message
-                  );
-
-                  return;
-                }
-
+              function () {
 
                 card.innerHTML = `
+                  
                   <div
                     class="code"
-                    id="code-${gift.id}"
                     title="タップしてコピー"
                   >
                     ${gift.gift_code}
                   </div>
 
-                  <button
-                    class="copy-button"
-                    id="copy-${gift.id}"
-                  >
+                  <button class="copy-button">
                     📋 コードをコピー
                   </button>
+
+                  <button class="complete-button">
+                    ✓ 受け取り完了
+                  </button>
+
                 `;
 
 
                 const code =
-                  document.getElementById(
-                    `code-${gift.id}`
-                  );
+                  card.querySelector(".code");
 
                 const copyButton =
-                  document.getElementById(
-                    `copy-${gift.id}`
-                  );
+                  card.querySelector(".copy-button");
+
+                const completeButton =
+                  card.querySelector(".complete-button");
 
 
                 async function copyCode() {
@@ -338,6 +314,54 @@
                 copyButton.addEventListener(
                   "click",
                   copyCode
+                );
+
+
+                completeButton.addEventListener(
+                  "click",
+                  async function () {
+
+                    completeButton.disabled = true;
+
+                    completeButton.textContent =
+                      "処理中...";
+
+
+                    const { error } =
+                      await client
+                        .from("gift_receipts")
+                        .insert({
+                          gift_id: gift.id,
+                          received_at:
+                            new Date().toISOString()
+                        });
+
+
+                    if (error) {
+
+                      console.error(error);
+
+                      completeButton.disabled = false;
+
+                      completeButton.textContent =
+                        "✓ 受け取り完了";
+
+                      alert(
+                        "受け取り完了にできませんでした。\n" +
+                        error.message
+                      );
+
+                      return;
+                    }
+
+
+                    card.innerHTML = `
+                      <div class="received">
+                        受け取り済み
+                      </div>
+                    `;
+
+                  }
                 );
 
               }
