@@ -93,7 +93,7 @@ header p {
 const SUPABASE_URL = "https://cgnluuynrurbsipwwluo.supabase.co";
 const SUPABASE_KEY = "sb_publishable_pZbtlCfKh1BVOxHaeXBIAA_CvfP0o0q";
 
-const supabase = window.supabase.createClient(
+const supabaseClient = window.supabase.createClient(
   SUPABASE_URL,
   SUPABASE_KEY
 );
@@ -123,8 +123,7 @@ const supabase = window.supabase.createClient(
 async function loadGifts() {
   const giftList = document.getElementById("gift-list");
 
-  const { data: gifts, error: giftError } = await supabase
-    .from("gift")
+  const { data: gifts, error: giftError } = supabaseClient.from("gift")
     .select("id, gift_code")
     .order("id", { ascending: true });
 
@@ -139,8 +138,7 @@ async function loadGifts() {
     return;
   }
 
-  const { data: receipts, error: receiptError } = await supabase
-    .from("gift_receipts")
+  const { data: receipts, error: receiptError } = supabaseClient.from("gift_receipts")
     .select("gift_id");
 
   if (receiptError) {
@@ -185,8 +183,7 @@ async function loadGifts() {
 
       checkbox.disabled = true;
 
-      const { error } = await supabase
-        .from("gift_receipts")
+      const { error } = await supabaseClient.from("gift_receipts")
         .insert({
           gift_id: gift.id,
           recived_at: new Date().toISOString()
