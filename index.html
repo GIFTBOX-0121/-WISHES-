@@ -1,234 +1,587 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>iTunes GIFT</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<title>GIFTBOX</title>
 
-  <style>
-    body {
-      font-family: sans-serif;
-      background: #f7f7f7;
-      margin: 0;
-      padding: 30px 15px;
-      color: #333;
-    }
+<style>
 
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-    }
+body {
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    "Helvetica Neue",
+    "Hiragino Kaku Gothic ProN",
+    "Yu Gothic",
+    sans-serif;
 
-    h1 {
-      text-align: center;
-      margin-bottom: 30px;
-    }
+  background: #f7f7f7;
 
-    .gift-card {
-      background: white;
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 15px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    }
+  margin: 0;
 
-    .gift-title {
-      font-weight: bold;
-      margin-bottom: 15px;
-    }
+  padding: 30px 15px;
 
-    button {
-      width: 100%;
-      padding: 13px;
-      border: none;
-      border-radius: 8px;
-      background: #333;
-      color: white;
-      font-size: 16px;
-      cursor: pointer;
-    }
+  color: #333;
+}
 
-    button:disabled {
-      background: #aaa;
-      cursor: default;
-    }
 
-    .code-box {
-      margin-top: 15px;
-      padding: 15px;
-      background: #f1f1f1;
-      border-radius: 8px;
-      word-break: break-all;
-      font-weight: bold;
-    }
+.container {
 
-    .copy-button {
-      margin-top: 10px;
-      background: #666;
-    }
+  max-width: 600px;
 
-    .received {
-      color: #999;
-      text-align: center;
-      padding: 10px 0;
-    }
+  margin: 0 auto;
 
-    .back {
-      display: block;
-      text-align: center;
-      margin-top: 30px;
-      color: #555;
-      text-decoration: none;
-    }
-  </style>
+  text-align: center;
+}
+
+
+/* タイトル */
+
+h1 {
+
+  margin: 0 0 20px;
+
+  font-size: 28px;
+
+  letter-spacing: 1px;
+}
+
+
+/* メイン画像 */
+
+.main-image {
+
+  display: block;
+
+  width: 100%;
+
+  max-width: 500px;
+
+  height: auto;
+
+  margin: 0 auto 20px;
+
+  border-radius: 12px;
+}
+
+
+/* 区切り線 */
+
+.line {
+
+  border-top: 1px solid #ddd;
+
+  margin: 20px 0;
+}
+
+
+/* クイズエリア */
+
+.quiz-area {
+
+  background: white;
+
+  padding: 24px 18px;
+
+  border-radius: 14px;
+
+  box-shadow:
+    0 2px 8px rgba(0,0,0,0.08);
+}
+
+
+/* 質問 */
+
+.question {
+
+  font-size: 16px;
+
+  font-weight: bold;
+
+  line-height: 1.8;
+
+  margin-bottom: 20px;
+}
+
+
+/* 入力 */
+
+.answer-input {
+
+  box-sizing: border-box;
+
+  width: 100%;
+
+  padding: 15px;
+
+  border: 1px solid #ccc;
+
+  border-radius: 9px;
+
+  font-size: 16px;
+
+  text-align: center;
+
+  outline: none;
+}
+
+
+.answer-input:focus {
+
+  border-color: #777;
+}
+
+
+/* 送信 */
+
+.submit-button {
+
+  width: 100%;
+
+  margin-top: 12px;
+
+  padding: 14px;
+
+  border: none;
+
+  border-radius: 9px;
+
+  background: #333;
+
+  color: white;
+
+  font-size: 16px;
+
+  font-weight: bold;
+
+  cursor: pointer;
+}
+
+
+.submit-button:active {
+
+  transform: scale(0.98);
+}
+
+
+/* 不正解 */
+
+.error-message {
+
+  min-height: 22px;
+
+  margin-top: 12px;
+
+  font-size: 14px;
+
+  color: #d94b4b;
+}
+
+
+/* サービス選択 */
+
+.service-area {
+
+  display: none;
+}
+
+
+.service-area.show {
+
+  display: block;
+}
+
+
+/* サービスボタン */
+
+.service-button {
+
+  display: block;
+
+  box-sizing: border-box;
+
+  width: 100%;
+
+  margin-bottom: 14px;
+
+  padding: 17px;
+
+  border-radius: 10px;
+
+  background: #333;
+
+  color: white;
+
+  text-decoration: none;
+
+  font-size: 17px;
+
+  font-weight: bold;
+
+  box-shadow:
+    0 2px 6px rgba(0,0,0,0.08);
+
+  transition:
+    transform 0.1s ease;
+}
+
+
+.service-button:active {
+
+  transform: scale(0.98);
+}
+
+
+/* 切り替え時 */
+
+.fade-in {
+
+  animation:
+    fadeIn 0.4s ease;
+}
+
+
+@keyframes fadeIn {
+
+  from {
+
+    opacity: 0;
+
+    transform:
+      translateY(6px);
+  }
+
+  to {
+
+    opacity: 1;
+
+    transform:
+      translateY(0);
+  }
+}
+
+
+</style>
 </head>
+
 
 <body>
 
-  <div class="container">
-    <h1>🎁 iTunes GIFT</h1>
 
-    <div id="gift-list">
-      読み込み中...
-    </div>
+<div class="container">
 
-    <a href="index.html" class="back">← サービス選択に戻る</a>
-  </div>
 
-  <script>
-    const SUPABASE_URL = "https://cgnluuynrurbsipwwluo.supabase.co";
-    const SUPABASE_KEY = "sb_publishable_pZbtlCfKh1BVOxHaeXBIAA_CvfP0o0q";
+<h1>
+⭐️ GIFTBOX ⭐️
+</h1>
 
-    const supabase = window.supabase.createClient(
-      SUPABASE_URL,
-      SUPABASE_KEY
+
+<img
+  src="FC567E6B-12F2-4604-8848-9ED7DD1E54EF.jpeg"
+  class="main-image"
+  alt="GIFTBOX"
+>
+
+
+<div class="line"></div>
+
+
+
+<!-- =========================
+     クイズ
+========================= -->
+
+
+<div
+  id="quiz-area"
+  class="quiz-area"
+>
+
+
+<div class="question">
+
+🎞 お花見with STARGLOW 🌸の配信コメント欄に<br>
+
+GOICHIが残したコメント（最初の11文字）は❓
+
+</div>
+
+
+<input
+  id="answer-input"
+  class="answer-input"
+  type="text"
+  placeholder="答えを入力"
+  autocomplete="off"
+>
+
+
+<button
+  id="submit-button"
+  class="submit-button"
+>
+
+送信
+
+</button>
+
+
+<div
+  id="error-message"
+  class="error-message"
+></div>
+
+
+</div>
+
+
+
+<!-- =========================
+     サービス選択
+========================= -->
+
+
+<div
+  id="service-area"
+  class="service-area"
+>
+
+
+<a
+  href="itunes.html"
+  class="service-button"
+>
+
+iTunes
+
+</a>
+
+
+<a
+  href="recochoku.html"
+  class="service-button"
+>
+
+レコチョク
+
+</a>
+
+
+<a
+  href="mumo.html"
+  class="service-button"
+>
+
+mu-mo
+
+</a>
+
+
+</div>
+
+
+
+</div>
+
+
+
+<script>
+
+
+const CORRECT_ANSWER =
+  "ぶんぶんはろーすたーず";
+
+
+const quizArea =
+  document.getElementById(
+    "quiz-area"
+  );
+
+
+const serviceArea =
+  document.getElementById(
+    "service-area"
+  );
+
+
+const answerInput =
+  document.getElementById(
+    "answer-input"
+  );
+
+
+const submitButton =
+  document.getElementById(
+    "submit-button"
+  );
+
+
+const errorMessage =
+  document.getElementById(
+    "error-message"
+  );
+
+
+
+/* =========================
+   回答を整える
+========================= */
+
+
+function normalizeAnswer(text) {
+
+  return text
+
+    /* 前後の空白 */
+
+    .trim()
+
+    /* 全角スペース */
+
+    .replace(
+      /　/g,
+      ""
+    )
+
+    /* 半角スペース */
+
+    .replace(
+      /\s/g,
+      ""
+
+    );
+}
+
+
+
+/* =========================
+   判定
+========================= */
+
+
+function checkAnswer() {
+
+
+  const answer =
+    normalizeAnswer(
+      answerInput.value
     );
 
-    const giftList = document.getElementById("gift-list");
 
-    function escapeHtml(text) {
-      const div = document.createElement("div");
-      div.textContent = text;
-      return div.innerHTML;
+  const correct =
+    normalizeAnswer(
+      CORRECT_ANSWER
+    );
+
+
+  if (
+    answer === correct
+  ) {
+
+
+    /*
+      クイズを消す
+    */
+
+    quizArea.style.display =
+      "none";
+
+
+    /*
+      同じ場所に
+      サービス選択を表示
+    */
+
+    serviceArea.classList.add(
+      "show"
+    );
+
+
+    serviceArea.classList.add(
+      "fade-in"
+    );
+
+
+  } else {
+
+
+    /*
+      不正解
+    */
+
+    errorMessage.textContent =
+      "答えが違います🥲";
+
+
+    answerInput.focus();
+
+
+    answerInput.select();
+
+  }
+
+}
+
+
+
+/* =========================
+   送信ボタン
+========================= */
+
+
+submitButton.addEventListener(
+  "click",
+  checkAnswer
+);
+
+
+
+/* =========================
+   Enterでも送信
+========================= */
+
+
+answerInput.addEventListener(
+  "keydown",
+  function(event) {
+
+
+    if (
+      event.key === "Enter"
+    ) {
+
+
+      checkAnswer();
+
+
     }
 
-    async function loadGifts() {
-      giftList.innerHTML = "読み込み中...";
+  }
+);
 
-      const { data: gifts, error: giftsError } = await supabase
-        .from("gifts")
-        .select("id, gift_code")
-        .eq("service", "itunes")
-        .order("id", { ascending: true });
 
-      if (giftsError) {
-        giftList.innerHTML = "ギフトの読み込みに失敗しました。";
-        console.error(giftsError);
-        return;
-      }
 
-      const { data: receipts, error: receiptsError } = await supabase
-        .from("gift_receipts")
-        .select("gift_id");
+/* 入力を始めたら
+   エラー表示を消す */
 
-      if (receiptsError) {
-        giftList.innerHTML = "受け取り状況の読み込みに失敗しました。";
-        console.error(receiptsError);
-        return;
-      }
 
-      const receivedIds = new Set(
-        receipts.map(receipt => receipt.gift_id)
-      );
+answerInput.addEventListener(
+  "input",
+  function() {
 
-      giftList.innerHTML = "";
 
-      if (!gifts || gifts.length === 0) {
-        giftList.innerHTML = "<p>現在、受け取れるギフトはありません。</p>";
-        return;
-      }
+    errorMessage.textContent =
+      "";
 
-      gifts.forEach((gift, index) => {
-        const card = document.createElement("div");
-        card.className = "gift-card";
 
-        const title = document.createElement("div");
-        title.className = "gift-title";
-        title.textContent = `Gift ${String(index + 1).padStart(3, "0")}`;
+  }
+);
 
-        card.appendChild(title);
 
-        if (receivedIds.has(gift.id)) {
-          const received = document.createElement("div");
-          received.className = "received";
-          received.textContent = "受け取り済み";
-          card.appendChild(received);
-        } else {
-          const button = document.createElement("button");
-          button.textContent = "コードを受け取る";
+</script>
 
-          button.addEventListener("click", async () => {
-            button.disabled = true;
-            button.textContent = "受け取り中...";
-
-            const { error } = await supabase
-              .from("gift_receipts")
-              .insert({
-                gift_id: gift.id,
-                received_at: new Date().toISOString()
-              });
-
-            if (error) {
-              console.error(error);
-              alert("受け取りに失敗しました。");
-              button.disabled = false;
-              button.textContent = "コードを受け取る";
-              return;
-            }
-
-            card.innerHTML = "";
-
-            const newTitle = document.createElement("div");
-            newTitle.className = "gift-title";
-            newTitle.textContent = `Gift ${String(index + 1).padStart(3, "0")}`;
-
-            const codeBox = document.createElement("div");
-            codeBox.className = "code-box";
-            codeBox.textContent = gift.gift_code;
-
-            const copyButton = document.createElement("button");
-            copyButton.className = "copy-button";
-            copyButton.textContent = "コードをコピー";
-
-            copyButton.addEventListener("click", async () => {
-              try {
-                await navigator.clipboard.writeText(gift.gift_code);
-                copyButton.textContent = "コピーしました！";
-
-                setTimeout(() => {
-                  copyButton.textContent = "コードをコピー";
-                }, 2000);
-              } catch (e) {
-                alert("コピーできませんでした。コードを長押ししてコピーしてください。");
-              }
-            });
-
-            card.appendChild(newTitle);
-            card.appendChild(codeBox);
-            card.appendChild(copyButton);
-          });
-
-          card.appendChild(button);
-        }
-
-        giftList.appendChild(card);
-      });
-    }
-
-    loadGifts();
-  </script>
 
 </body>
 </html>
