@@ -84,20 +84,26 @@
       padding: 10px;
     }
 
-    .back {
-      display: block;
-      text-align: center;
-      margin-top: 25px;
-      color: #555;
-      text-decoration: none;
-    }
-
     .error {
       text-align: center;
       color: #d00;
       background: white;
       padding: 15px;
       border-radius: 10px;
+    }
+
+    .already-taken {
+      text-align: center;
+      color: #999;
+      padding: 10px;
+    }
+
+    .back {
+      display: block;
+      text-align: center;
+      margin-top: 25px;
+      color: #555;
+      text-decoration: none;
     }
   </style>
 </head>
@@ -131,6 +137,7 @@
         SUPABASE_KEY
       );
 
+
     const giftList =
       document.getElementById("gift-list");
 
@@ -139,6 +146,7 @@
 
       giftList.innerHTML =
         "<p style='text-align:center;'>読み込み中...</p>";
+
 
       try {
 
@@ -242,10 +250,59 @@
 
             button.addEventListener(
               "click",
-              function () {
+              async function () {
+
+                button.disabled = true;
+
+                button.textContent =
+                  "受け取り中...";
+
+
+                const { error } =
+                  await client
+                    .from("gift_receipts")
+                    .insert({
+                      gift_id: gift.id,
+                      received_at:
+                        new Date().toISOString()
+                    });
+
+
+                if (error) {
+
+                  console.error(error);
+
+
+                  if (error.code === "23505") {
+
+                    card.innerHTML = `
+                      <div class="already-taken">
+                        このGiftは<br>
+                        受け取り済みです。
+                      </div>
+                    `;
+
+                    return;
+                  }
+
+
+                  button.disabled = false;
+
+                  button.textContent =
+                    "コードを受け取る";
+
+
+                  alert(
+                    "受け取りに失敗しました。\n" +
+                    error.message
+                  );
+
+                  return;
+                }
+
 
                 card.innerHTML = `
-                  
+
                   <div
                     class="code"
                     title="タップしてコピー"
@@ -282,8 +339,10 @@
                       gift.gift_code
                     );
 
+
                     copyButton.textContent =
                       "✓ コピーしました";
+
 
                     setTimeout(function () {
 
@@ -291,6 +350,7 @@
                         "📋 コードをコピー";
 
                     }, 1500);
+
 
                   } catch (error) {
 
@@ -319,41 +379,7 @@
 
                 completeButton.addEventListener(
                   "click",
-                  async function () {
-
-                    completeButton.disabled = true;
-
-                    completeButton.textContent =
-                      "処理中...";
-
-
-                    const { error } =
-                      await client
-                        .from("gift_receipts")
-                        .insert({
-                          gift_id: gift.id,
-                          received_at:
-                            new Date().toISOString()
-                        });
-
-
-                    if (error) {
-
-                      console.error(error);
-
-                      completeButton.disabled = false;
-
-                      completeButton.textContent =
-                        "✓ 受け取り完了";
-
-                      alert(
-                        "受け取り完了にできませんでした。\n" +
-                        error.message
-                      );
-
-                      return;
-                    }
-
+                  function () {
 
                     card.innerHTML = `
                       <div class="received">
@@ -373,6 +399,7 @@
           giftList.appendChild(card);
 
         });
+
 
       } catch (error) {
 
