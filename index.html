@@ -27,16 +27,16 @@ body {
 .container {
   max-width: 600px;
   margin: 0 auto;
-  padding: 32px 20px 50px;
+  padding: 50px 20px;
 }
 
 header {
   text-align: center;
-  margin-bottom: 30px;
+  margin-bottom: 35px;
 }
 
 header h1 {
-  margin: 0 0 8px;
+  margin: 0 0 10px;
   font-size: 28px;
 }
 
@@ -46,58 +46,33 @@ header p {
   font-size: 14px;
 }
 
-.gift {
+.service-button {
+  display: block;
+  width: 100%;
+  padding: 20px;
+  margin-bottom: 16px;
   background: white;
+  color: #333;
+  text-decoration: none;
+  text-align: center;
   border-radius: 16px;
-  padding: 18px;
-  margin-bottom: 14px;
   box-shadow: 0 3px 12px rgba(0,0,0,0.06);
-}
-
-.gift-title {
   font-size: 17px;
   font-weight: bold;
-  margin-bottom: 8px;
 }
 
-.gift-code {
-  background: #f1f3f8;
-  padding: 10px;
-  border-radius: 8px;
-  font-size: 13px;
-  word-break: break-all;
-  margin-bottom: 14px;
-}
-
-.check-area {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 14px;
-}
-
-.check-area input {
-  width: 20px;
-  height: 20px;
+.service-button:active {
+  transform: scale(0.98);
 }
 
 .note {
-  margin-top: 28px;
+  margin-top: 35px;
   text-align: center;
   font-size: 12px;
   color: #999;
 }
 </style>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-const SUPABASE_URL = "https://cgnluuynrurbsipwwluo.supabase.co";
-const SUPABASE_KEY = "sb_publishable_pZbtlCfKh1BVOxHaeXBIAA_CvfP0o0q";
 
-const supabaseClient = window.supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_KEY
-);
-</script>
 </head>
 
 <body>
@@ -106,112 +81,26 @@ const supabaseClient = window.supabase.createClient(
 
   <header>
     <h1>🎁 Gift Check</h1>
-    <p>受け取ったギフトにチェックをつけてね</p>
+    <p>受け取りたいギフトを選んでね</p>
   </header>
 
-  <div id="gift-list">
-    <p style="text-align:center;color:#999;">読み込み中…</p>
-  </div>
+  <a class="service-button" href="itunes.html">
+    🎵 iTunes
+  </a>
+
+  <a class="service-button" href="recochoku.html">
+    🎵 レコチョク
+  </a>
+
+  <a class="service-button" href="mumo.html">
+    🎵 mu-mo
+  </a>
 
   <div class="note">
     Gift Check
   </div>
 
 </div>
-
-<script>
-async function loadGifts() {
-  const giftList = document.getElementById("gift-list");
-
-  const { data: gifts, error: giftError } = await supabaseClient.from("gifts")
-    .select("id, gift_code")
-    .order("id", { ascending: true });
-
-  if (giftError) {
-    console.error(giftError);
-    giftList.innerHTML = "<p style='text-align:center;color:#c66;'>ギフトの読み込みに失敗しました。</p>";
-    return;
-  }
-
-  if (!gifts || gifts.length === 0) {
-    giftList.innerHTML = "<p style='text-align:center;color:#999;'>現在ギフトはありません。</p>";
-    return;
-  }
-
-  const { data: receipts, error: receiptError } = await supabaseClient.from("gift_receipts")
-    .select("gift_id");
-
-  if (receiptError) {
-    console.error(receiptError);
-  }
-
-  const receivedIds = new Set(
-    (receipts || []).map(receipt => receipt.gift_id)
-  );
-
-  giftList.innerHTML = "";
-
-  gifts.forEach((gift, index) => {
-    const isReceived = receivedIds.has(gift.id);
-
-    const giftElement = document.createElement("div");
-    giftElement.className = "gift";
-
-    giftElement.innerHTML = `
-      <div class="gift-title">
-        🎵 Gift ${String(index + 1).padStart(3, "0")}
-      </div>
-
-      <div class="gift-code">
-        ${escapeHtml(gift.gift_code)}
-      </div>
-
-      <label class="check-area">
-        <input
-          type="checkbox"
-          ${isReceived ? "checked disabled" : ""}
-          data-gift-id="${gift.id}"
-        >
-        <span>${isReceived ? "受け取り済み" : "受け取りました"}</span>
-      </label>
-    `;
-
-    const checkbox = giftElement.querySelector("input");
-
-    checkbox.addEventListener("change", async () => {
-      if (!checkbox.checked) return;
-
-      checkbox.disabled = true;
-
-      const { error } = await supabaseClient.from("gift_receipts")
-        .insert({
-          gift_id: gift.id,
-          received_at: new Date().toISOString()
-        });
-
-      if (error) {
-        console.error(error);
-        checkbox.checked = false;
-        checkbox.disabled = false;
-        alert("保存できませんでした。もう一度試してください。");
-        return;
-      }
-
-      checkbox.nextElementSibling.textContent = "受け取り済み";
-    });
-
-    giftList.appendChild(giftElement);
-  });
-}
-
-function escapeHtml(text) {
-  const div = document.createElement("div");
-  div.textContent = text ?? "";
-  return div.innerHTML;
-}
-
-loadGifts();
-</script>
 
 </body>
 </html>
