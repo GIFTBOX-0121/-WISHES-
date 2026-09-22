@@ -150,6 +150,39 @@
       border-radius: 10px;
     }
 
+    .pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: 25px 0;
+    }
+
+    .page-button {
+      min-width: 40px;
+      height: 40px;
+      padding: 0 10px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background: white;
+      color: #333;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .page-button.active {
+      background: #333;
+      color: white;
+      border-color: #333;
+    }
+
+    .page-button:disabled {
+      color: #aaa;
+      background: #f5f5f5;
+      cursor: default;
+    }
+
     .back {
       display: block;
       text-align: center;
@@ -196,9 +229,19 @@
 
     </header>
 
+
     <div id="gift-list"></div>
 
-    <a href="index.html" class="back">
+    <div
+      id="pagination"
+      class="pagination"
+    ></div>
+
+
+    <a
+      href="index.html"
+      class="back"
+    >
       ← サービス選択に戻る
     </a>
 
@@ -223,6 +266,9 @@
     const giftList =
       document.getElementById("gift-list");
 
+    const pagination =
+      document.getElementById("pagination");
+
     const counter =
       document.getElementById("counter");
 
@@ -231,6 +277,15 @@
 
     const total =
       document.getElementById("total");
+
+
+    const RECEIVED_PER_PAGE = 20;
+
+    let currentPage = 1;
+
+    let allGifts = [];
+
+    let receivedIds = new Set();
 
 
     function updateTimeDisplay() {
@@ -244,10 +299,14 @@
         now.getDate();
 
       const hours =
-        String(now.getHours()).padStart(2, "0");
+        String(
+          now.getHours()
+        ).padStart(2, "0");
 
       const minutes =
-        String(now.getMinutes()).padStart(2, "0");
+        String(
+          now.getMinutes()
+        ).padStart(2, "0");
 
       updateTime.textContent =
         `${month}月${day}日 ${hours}:${minutes}時点`;
@@ -264,10 +323,11 @@
           window.isSecureContext
         ) {
 
-          await navigator.clipboard.writeText(text);
+          await navigator.clipboard.writeText(
+            text
+          );
 
           return true;
-
         }
 
       } catch (error) {
@@ -284,24 +344,39 @@
 
         textarea.value = text;
 
-        textarea.style.position = "fixed";
-        textarea.style.left = "-9999px";
-        textarea.style.top = "0";
-        textarea.style.opacity = "0";
+        textarea.style.position =
+          "fixed";
 
-        document.body.appendChild(textarea);
+        textarea.style.left =
+          "-9999px";
+
+        textarea.style.top =
+          "0";
+
+        textarea.style.opacity =
+          "0";
+
+        document.body.appendChild(
+          textarea
+        );
 
         textarea.focus();
+
         textarea.select();
+
         textarea.setSelectionRange(
           0,
           textarea.value.length
         );
 
         const success =
-          document.execCommand("copy");
+          document.execCommand(
+            "copy"
+          );
 
-        document.body.removeChild(textarea);
+        document.body.removeChild(
+          textarea
+        );
 
         return success;
 
@@ -320,16 +395,25 @@
 
       try {
 
-        const { data: gifts, error } =
+        const {
+          data: gifts,
+          error
+        } =
           await client
             .from("gifts")
             .select(
               "id, gift_code, service"
             )
-            .eq("service", "itunes")
-            .order("id", {
-              ascending: true
-            });
+            .eq(
+              "service",
+              "itunes"
+            )
+            .order(
+              "id",
+              {
+                ascending: true
+              }
+            );
 
 
         if (error) {
@@ -343,18 +427,26 @@
           `;
 
           return;
+
         }
 
 
-        const { data: receipts, error: receiptError } =
+        const {
+          data: receipts,
+          error: receiptError
+        } =
           await client
             .from("gift_receipts")
-            .select("gift_id");
+            .select(
+              "gift_id"
+            );
 
 
         if (receiptError) {
 
-          console.error(receiptError);
+          console.error(
+            receiptError
+          );
 
           giftList.innerHTML = `
             <div class="error">
@@ -363,30 +455,34 @@
           `;
 
           return;
+
         }
 
 
-        const receivedIds =
+        allGifts =
+          gifts || [];
+
+
+        receivedIds =
           new Set(
             (receipts || []).map(
-              item => item.gift_id
+              item =>
+                item.gift_id
             )
           );
 
 
         const totalCount =
-          gifts.length;
-
-
-        const receivedCount =
-          gifts.filter(
-            gift =>
-              receivedIds.has(gift.id)
-          ).length;
+          allGifts.length;
 
 
         const unreceivedCount =
-          totalCount - receivedCount;
+          allGifts.filter(
+            gift =>
+              !receivedIds.has(
+                gift.id
+              )
+          ).length;
 
 
         counter.textContent =
@@ -400,263 +496,44 @@
         updateTimeDisplay();
 
 
-        const sortedGifts =
-          [...gifts].sort(
-            (a, b) => {
+        /*
+          現在のページが
+          存在しなくなった場合の調整
+        */
 
-              const aReceived =
-                receivedIds.has(a.id);
-
-              const bReceived =
-                receivedIds.has(b.id);
-
-
-              if (
-                aReceived === bReceived
-              ) {
-
-                return a.id - b.id;
-
-              }
-
-
-              return aReceived
-                ? 1
-                : -1;
-
-            }
-          );
-
-
-        giftList.innerHTML = "";
-
-
-        sortedGifts.forEach(
-          gift => {
-
-            const card =
-              document.createElement(
-                "div"
-              );
-
-            card.className =
-              "gift-card";
-
-
-            if (
+        const receivedGifts =
+          allGifts.filter(
+            gift =>
               receivedIds.has(
                 gift.id
               )
-            ) {
+          );
 
-              card.innerHTML = `
-                <div class="received">
-                  受け取り済み
-                </div>
-              `;
 
-            } else {
+        const totalPages =
+          Math.max(
+            1,
+            Math.ceil(
+              receivedGifts.length /
+              RECEIVED_PER_PAGE
+            )
+          );
 
-              card.innerHTML = `
-                <button class="receive-button">
-                  コードを受け取る
-                </button>
-              `;
 
+        if (
+          currentPage >
+          totalPages
+        ) {
 
-              const button =
-                card.querySelector(
-                  ".receive-button"
-                );
+          currentPage =
+            totalPages;
 
+        }
 
-              button.addEventListener(
-                "click",
-                async function () {
 
-                  button.disabled =
-                    true;
+        renderGifts();
 
-                  button.textContent =
-                    "受け取り中...";
-
-
-                  const { error } =
-                    await client
-                      .from("gift_receipts")
-                      .insert({
-                        gift_id:
-                          gift.id,
-
-                        received_at:
-                          new Date()
-                            .toISOString()
-                      });
-
-
-                  if (error) {
-
-                    console.error(
-                      error
-                    );
-
-
-                    if (
-                      error.code ===
-                      "23505"
-                    ) {
-
-                      card.innerHTML = `
-                        <div class="already-taken">
-                          このGiftは<br>
-                          受け取り済みです。
-                        </div>
-                      `;
-
-                      await loadGifts();
-
-                      return;
-
-                    }
-
-
-                    button.disabled =
-                      false;
-
-                    button.textContent =
-                      "コードを受け取る";
-
-                    alert(
-                      "受け取りに失敗しました。"
-                    );
-
-                    return;
-
-                  }
-
-
-                  card.innerHTML = `
-
-                    <div
-                      class="code"
-                      title="タップしてコピー"
-                    >
-                      ${gift.gift_code}
-                    </div>
-
-                    <button
-                      class="copy-button"
-                    >
-                      📋 コードをコピー
-                    </button>
-
-                    <button
-                      class="complete-button"
-                    >
-                      ✓ 受け取り完了
-                    </button>
-
-                  `;
-
-
-                  const code =
-                    card.querySelector(
-                      ".code"
-                    );
-
-                  const copyButton =
-                    card.querySelector(
-                      ".copy-button"
-                    );
-
-                  const completeButton =
-                    card.querySelector(
-                      ".complete-button"
-                    );
-
-
-                  async function doCopy() {
-
-                    const success =
-                      await copyText(
-                        gift.gift_code
-                      );
-
-
-                    if (success) {
-
-                      copyButton.textContent =
-                        "✓ コピーしました";
-
-
-                      setTimeout(
-                        function () {
-
-                          copyButton.textContent =
-                            "📋 コードをコピー";
-
-                        },
-                        1500
-                      );
-
-                    } else {
-
-                      alert(
-                        "コピーできませんでした。\nコードを長押ししてコピーしてください。"
-                      );
-
-                    }
-
-                  }
-
-
-                  code.addEventListener(
-                    "click",
-                    doCopy
-                  );
-
-
-                  copyButton.addEventListener(
-                    "click",
-                    doCopy
-                  );
-
-
-                  completeButton.addEventListener(
-                    "click",
-                    async function () {
-
-                      completeButton.disabled =
-                        true;
-
-                      completeButton.textContent =
-                        "処理中...";
-
-
-                      card.innerHTML = `
-                        <div class="received">
-                          受け取り済み
-                        </div>
-                      `;
-
-
-                      await loadGifts();
-
-                    }
-                  );
-
-                }
-              );
-
-            }
-
-
-            giftList.appendChild(
-              card
-            );
-
-          }
-        );
+        renderPagination();
 
 
       } catch (error) {
@@ -674,17 +551,582 @@
     }
 
 
+    function renderGifts() {
+
+      giftList.innerHTML = "";
+
+
+      /*
+        未受け取り
+      */
+
+      const unreceivedGifts =
+        allGifts.filter(
+          gift =>
+            !receivedIds.has(
+              gift.id
+            )
+        );
+
+
+      /*
+        受け取り済み
+      */
+
+      const receivedGifts =
+        allGifts.filter(
+          gift =>
+            receivedIds.has(
+              gift.id
+            )
+        );
+
+
+      /*
+        受け取り済みを
+        20件ずつ表示
+      */
+
+      const startIndex =
+        (currentPage - 1) *
+        RECEIVED_PER_PAGE;
+
+
+      const endIndex =
+        startIndex +
+        RECEIVED_PER_PAGE;
+
+
+      const pageReceivedGifts =
+        receivedGifts.slice(
+          startIndex,
+          endIndex
+        );
+
+
+      /*
+        未受け取りを先に表示
+      */
+
+      const displayGifts =
+        [
+          ...unreceivedGifts,
+          ...pageReceivedGifts
+        ];
+
+
+      if (
+        displayGifts.length === 0
+      ) {
+
+        giftList.innerHTML = `
+          <div class="gift-card">
+            <div style="text-align:center;">
+              現在Giftはありません。
+            </div>
+          </div>
+        `;
+
+        return;
+
+      }
+
+
+      displayGifts.forEach(
+        gift => {
+
+          renderGiftCard(
+            gift
+          );
+
+        }
+      );
+
+    }
+
+
+    function renderGiftCard(
+      gift
+    ) {
+
+      const card =
+        document.createElement(
+          "div"
+        );
+
+      card.className =
+        "gift-card";
+
+
+      /*
+        受け取り済み
+      */
+
+      if (
+        receivedIds.has(
+          gift.id
+        )
+      ) {
+
+        card.innerHTML = `
+          <div class="received">
+            受け取り済み
+          </div>
+        `;
+
+
+        giftList.appendChild(
+          card
+        );
+
+
+        return;
+
+      }
+
+
+      /*
+        未受け取り
+      */
+
+      card.innerHTML = `
+        <button class="receive-button">
+          コードを受け取る
+        </button>
+      `;
+
+
+      const button =
+        card.querySelector(
+          ".receive-button"
+        );
+
+
+      button.addEventListener(
+        "click",
+        async function () {
+
+          button.disabled =
+            true;
+
+          button.textContent =
+            "受け取り中...";
+
+
+          const {
+            error
+          } =
+            await client
+              .from(
+                "gift_receipts"
+              )
+              .insert({
+                gift_id:
+                  gift.id,
+
+                received_at:
+                  new Date()
+                    .toISOString()
+              });
+
+
+          if (error) {
+
+            console.error(
+              error
+            );
+
+
+            /*
+              誰かが先に
+              受け取った場合
+            */
+
+            if (
+              error.code ===
+              "23505"
+            ) {
+
+              card.innerHTML = `
+                <div class="already-taken">
+                  このGiftは<br>
+                  受け取り済みです。
+                </div>
+              `;
+
+
+              await loadGifts();
+
+              return;
+
+            }
+
+
+            button.disabled =
+              false;
+
+            button.textContent =
+              "コードを受け取る";
+
+
+            alert(
+              "受け取りに失敗しました。"
+            );
+
+
+            return;
+
+          }
+
+
+          /*
+            受け取り成功
+          */
+
+          card.innerHTML = `
+
+            <div
+              class="code"
+              title="タップしてコピー"
+            >
+              ${gift.gift_code}
+            </div>
+
+            <button
+              class="copy-button"
+            >
+              📋 コードをコピー
+            </button>
+
+            <button
+              class="complete-button"
+            >
+              ✓ 受け取り完了
+            </button>
+
+          `;
+
+
+          const code =
+            card.querySelector(
+              ".code"
+            );
+
+
+          const copyButton =
+            card.querySelector(
+              ".copy-button"
+            );
+
+
+          const completeButton =
+            card.querySelector(
+              ".complete-button"
+            );
+
+
+          async function doCopy() {
+
+            const success =
+              await copyText(
+                gift.gift_code
+              );
+
+
+            if (success) {
+
+              copyButton.textContent =
+                "✓ コピーしました";
+
+
+              setTimeout(
+                function () {
+
+                  copyButton.textContent =
+                    "📋 コードをコピー";
+
+                },
+                1500
+              );
+
+
+            } else {
+
+              alert(
+                "コピーできませんでした。\nコードを長押ししてコピーしてください。"
+              );
+
+            }
+
+          }
+
+
+          code.addEventListener(
+            "click",
+            doCopy
+          );
+
+
+          copyButton.addEventListener(
+            "click",
+            doCopy
+          );
+
+
+          completeButton.addEventListener(
+            "click",
+            async function () {
+
+              completeButton.disabled =
+                true;
+
+              completeButton.textContent =
+                "処理中...";
+
+
+              card.innerHTML = `
+                <div class="received">
+                  受け取り済み
+                </div>
+              `;
+
+
+              await loadGifts();
+
+            }
+          );
+
+        }
+      );
+
+
+      giftList.appendChild(
+        card
+      );
+
+    }
+
+
+    function renderPagination() {
+
+      pagination.innerHTML = "";
+
+
+      const receivedGifts =
+        allGifts.filter(
+          gift =>
+            receivedIds.has(
+              gift.id
+            )
+        );
+
+
+      const totalPages =
+        Math.ceil(
+          receivedGifts.length /
+          RECEIVED_PER_PAGE
+        );
+
+
+      /*
+        受け取り済みが20件以下なら
+        ページ番号を表示しない
+      */
+
+      if (
+        totalPages <= 1
+      ) {
+
+        return;
+
+      }
+
+
+      /*
+        前へ
+      */
+
+      const previous =
+        document.createElement(
+          "button"
+        );
+
+      previous.className =
+        "page-button";
+
+      previous.textContent =
+        "‹ 前へ";
+
+      previous.disabled =
+        currentPage === 1;
+
+
+      previous.addEventListener(
+        "click",
+        function () {
+
+          if (
+            currentPage > 1
+          ) {
+
+            currentPage--;
+
+            renderGifts();
+
+            renderPagination();
+
+            window.scrollTo({
+              top: 0,
+              behavior: "smooth"
+            });
+
+          }
+
+        }
+      );
+
+
+      pagination.appendChild(
+        previous
+      );
+
+
+      /*
+        ページ番号
+      */
+
+      for (
+        let page = 1;
+        page <= totalPages;
+        page++
+      ) {
+
+        const pageButton =
+          document.createElement(
+            "button"
+          );
+
+        pageButton.className =
+          "page-button";
+
+
+        if (
+          page === currentPage
+        ) {
+
+          pageButton.classList.add(
+            "active"
+          );
+
+        }
+
+
+        pageButton.textContent =
+          page;
+
+
+        pageButton.addEventListener(
+          "click",
+          function () {
+
+            currentPage =
+              page;
+
+            renderGifts();
+
+            renderPagination();
+
+            window.scrollTo({
+              top: 0,
+              behavior: "smooth"
+            });
+
+          }
+        );
+
+
+        pagination.appendChild(
+          pageButton
+        );
+
+      }
+
+
+      /*
+        次へ
+      */
+
+      const next =
+        document.createElement(
+          "button"
+        );
+
+      next.className =
+        "page-button";
+
+      next.textContent =
+        "次へ ›";
+
+      next.disabled =
+        currentPage === totalPages;
+
+
+      next.addEventListener(
+        "click",
+        function () {
+
+          if (
+            currentPage <
+            totalPages
+          ) {
+
+            currentPage++;
+
+            renderGifts();
+
+            renderPagination();
+
+            window.scrollTo({
+              top: 0,
+              behavior: "smooth"
+            });
+
+          }
+
+        }
+      );
+
+
+      pagination.appendChild(
+        next
+      );
+
+    }
+
+
+    /*
+      初回読み込み
+    */
+
     loadGifts();
 
 
-    updateTimeDisplay();
+    /*
+      時刻を1分ごとに更新
+    */
 
+    updateTimeDisplay();
 
     setInterval(
       updateTimeDisplay,
       60000
     );
 
+
+    /*
+      Gift一覧と件数を
+      30秒ごとに自動更新
+    */
 
     setInterval(
       loadGifts,
