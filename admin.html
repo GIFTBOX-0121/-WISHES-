@@ -9,6 +9,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
+
 body {
   font-family:
     -apple-system,
@@ -42,6 +43,9 @@ h1 {
   margin-bottom: 25px;
 }
 
+
+/* 累計 */
+
 .summary {
   background: #333;
   color: white;
@@ -61,6 +65,9 @@ h1 {
   font-size: 30px;
   font-weight: bold;
 }
+
+
+/* 日別カード */
 
 .day-card {
   background: white;
@@ -90,10 +97,6 @@ h1 {
     1px solid #eee;
 }
 
-.row:last-of-type {
-  border-bottom: none;
-}
-
 .service-name {
   font-size: 15px;
 }
@@ -116,6 +119,9 @@ h1 {
   font-weight: bold;
 }
 
+
+/* 空 */
+
 .empty {
   background: white;
   border-radius: 14px;
@@ -123,6 +129,9 @@ h1 {
   text-align: center;
   color: #999;
 }
+
+
+/* エラー */
 
 .error {
   background: white;
@@ -132,24 +141,35 @@ h1 {
   color: #d94b4b;
 }
 
+
+/* 更新時間 */
+
 .update {
   text-align: center;
   color: #aaa;
   font-size: 12px;
   margin: 20px 0;
 }
+
 </style>
 </head>
 
+
 <body>
+
 
 <div class="container">
 
-<h1>⭐️ GIFTBOX 管理 ⭐️</h1>
+
+<h1>
+⭐️ GIFTBOX 管理 ⭐️
+</h1>
+
 
 <div class="subtitle">
 Gift追加数
 </div>
+
 
 
 <div class="summary">
@@ -168,7 +188,9 @@ Gift追加数
 </div>
 
 
+
 <div id="stats"></div>
+
 
 
 <div
@@ -176,13 +198,17 @@ Gift追加数
   class="update"
 ></div>
 
+
 </div>
+
 
 
 <script>
 
+
 const SUPABASE_URL =
   "https://cgnluuynrurbsipwwluo.supabase.co";
+
 
 const SUPABASE_KEY =
   "sb_publishable_pZbtlCfKh1BVOxHaeXBIAA_CvfP0o0q";
@@ -196,102 +222,68 @@ const client =
 
 
 const stats =
-  document.getElementById("stats");
+  document.getElementById(
+    "stats"
+  );
+
 
 const grandTotal =
-  document.getElementById("grand-total");
+  document.getElementById(
+    "grand-total"
+  );
+
 
 const updateTime =
-  document.getElementById("update-time");
-
-
-/* =========================
-   日本時間の日付を取得
-========================= */
-
-function getJSTDate(dateString) {
-
-  const date =
-    new Date(dateString);
-
-
-  const parts =
-    new Intl.DateTimeFormat(
-      "ja-JP",
-      {
-        timeZone:
-          "Asia/Tokyo",
-
-        year:
-          "numeric",
-
-        month:
-          "2-digit",
-
-        day:
-          "2-digit"
-      }
-    ).formatToParts(date);
-
-
-  const values = {};
-
-
-  parts.forEach(
-    part => {
-
-      if (
-        part.type !==
-        "literal"
-      ) {
-
-        values[
-          part.type
-        ] =
-          part.value;
-      }
-    }
+  document.getElementById(
+    "update-time"
   );
 
-
-  return (
-    values.year +
-    "-" +
-    values.month +
-    "-" +
-    values.day
-  );
-}
 
 
 /* =========================
    日付表示
 ========================= */
 
-function formatDate(dateKey) {
 
-  const [
-    year,
-    month,
-    day
-  ] =
-    dateKey.split("-");
+function formatDate(dateString) {
+
+
+  const parts =
+    dateString.split("-");
+
+
+  const year =
+    Number(parts[0]);
+
+
+  const month =
+    Number(parts[1]);
+
+
+  const day =
+    Number(parts[2]);
 
 
   return (
-    Number(month) +
+    year +
+    "年" +
+    month +
     "月" +
-    Number(day) +
+    day +
     "日"
   );
+
 }
+
 
 
 /* =========================
    更新時刻
 ========================= */
 
+
 function showUpdateTime() {
+
 
   const now =
     new Date();
@@ -301,6 +293,7 @@ function showUpdateTime() {
     new Intl.DateTimeFormat(
       "ja-JP",
       {
+
         timeZone:
           "Asia/Tokyo",
 
@@ -318,6 +311,7 @@ function showUpdateTime() {
 
         hour12:
           false
+
       }
     ).format(now);
 
@@ -325,26 +319,35 @@ function showUpdateTime() {
   updateTime.textContent =
     text +
     " 時点";
+
 }
 
 
+
 /* =========================
-   集計
+   永久保存データ読み込み
 ========================= */
 
+
 async function loadStats() {
+
 
   const {
     data,
     error
   } =
     await client
-      .from("gifts")
-      .select(
-        "id, service, created_at"
+
+      .from(
+        "gift_daily_stats"
       )
+
+      .select(
+        "stat_date, service, gift_count"
+      )
+
       .order(
-        "created_at",
+        "stat_date",
         {
           ascending: false
         }
@@ -353,7 +356,10 @@ async function loadStats() {
 
   if (error) {
 
-    console.error(error);
+
+    console.error(
+      error
+    );
 
 
     stats.innerHTML =
@@ -363,115 +369,171 @@ async function loadStats() {
 
 
     return;
+
   }
 
 
-  const gifts =
+
+  const records =
     data || [];
 
 
+
+  /*
+    全期間累計
+  */
+
+
+  let allTotal =
+    0;
+
+
+  records.forEach(
+    item => {
+
+
+      allTotal +=
+        Number(
+          item.gift_count
+        ) || 0;
+
+
+    }
+  );
+
+
   grandTotal.textContent =
-    gifts.length;
+    allTotal;
+
+
+
+  /*
+    データなし
+  */
 
 
   if (
-    gifts.length === 0
+    records.length === 0
   ) {
+
 
     stats.innerHTML =
       `<div class="empty">
-        まだGiftはありません🎁
+        まだ記録はありません🎁
       </div>`;
 
 
     showUpdateTime();
 
+
     return;
+
   }
 
 
+
   /*
-    日付ごとの箱
+    日付ごとにまとめる
   */
 
-  const grouped = {};
+
+  const grouped =
+    {};
 
 
-  gifts.forEach(
-    gift => {
+  records.forEach(
+    item => {
 
 
       const date =
-        getJSTDate(
-          gift.created_at
-        );
+        item.stat_date;
 
 
       if (
         !grouped[date]
       ) {
 
-        grouped[date] = {
 
-          itunes: 0,
+        grouped[date] =
+          {
 
-          recochoku: 0,
+            itunes: 0,
 
-          mumo: 0,
+            recochoku: 0,
 
-          total: 0
+            mumo: 0,
 
-        };
+            total: 0
+
+          };
+
       }
 
 
-      /*
-        サービス別
-      */
+
+      const count =
+        Number(
+          item.gift_count
+        ) || 0;
+
+
 
       if (
-        gift.service ===
+        item.service ===
         "itunes"
       ) {
 
+
         grouped[date]
-          .itunes++;
+          .itunes +=
+          count;
 
       }
 
 
+
       if (
-        gift.service ===
+        item.service ===
         "recochoku"
       ) {
 
+
         grouped[date]
-          .recochoku++;
+          .recochoku +=
+          count;
 
       }
+
 
 
       if (
-        gift.service ===
+        item.service ===
         "mumo"
       ) {
 
+
         grouped[date]
-          .mumo++;
+          .mumo +=
+          count;
 
       }
 
 
+
       grouped[date]
-        .total++;
+        .total +=
+        count;
+
 
     }
   );
 
 
+
   /*
-    新しい日付から表示
+    新しい日付順
   */
+
 
   const dates =
     Object.keys(
@@ -482,7 +544,15 @@ async function loadStats() {
     );
 
 
-  stats.innerHTML = "";
+
+  stats.innerHTML =
+    "";
+
+
+
+  /*
+    カード作成
+  */
 
 
   dates.forEach(
@@ -503,10 +573,13 @@ async function loadStats() {
         "day-card";
 
 
-      card.innerHTML = `
+      card.innerHTML =
+        `
 
         <div class="date">
+
           ${formatDate(date)}
+
         </div>
 
 
@@ -561,39 +634,46 @@ async function loadStats() {
 
         </div>
 
-      `;
+        `;
 
 
       stats.appendChild(
         card
       );
 
+
     }
   );
 
 
   showUpdateTime();
+
 }
 
 
+
 /* =========================
-   読み込み
+   初回読み込み
 ========================= */
+
 
 loadStats();
 
 
-/*
-  30秒ごとに
-  自動更新
-*/
+
+/* =========================
+   30秒ごとに自動更新
+========================= */
+
 
 setInterval(
   loadStats,
   30000
 );
 
+
 </script>
+
 
 </body>
 </html>
