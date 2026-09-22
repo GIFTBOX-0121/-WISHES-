@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gift 追加</title>
+  <title>Giftを追加</title>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -105,8 +105,8 @@
         placeholder="コードまたはギフトURLを入力"
       >
 
-      <button id="add-button">
-        Giftを追加する
+      <button type="button" id="add-button">
+        🎁を追加
       </button>
 
       <div id="message"></div>
@@ -120,26 +120,38 @@
   </div>
 
   <script>
-    const SUPABASE_URL = "https://cgnluuynrurbsipwwluo.supabase.co";
-    const SUPABASE_KEY = "sb_publishable_pZbtlCfKh1BVOxHaeXBIAA_CvfP0o0q";
+    const SUPABASE_URL =
+      "https://cgnluuynrurbsipwwluo.supabase.co";
 
-    const supabase = window.supabase.createClient(
+    const SUPABASE_KEY =
+      "sb_publishable_pZbtlCfKh1BVOxHaeXBIAA_CvfP0o0q";
+
+    const client = window.supabase.createClient(
       SUPABASE_URL,
       SUPABASE_KEY
     );
 
-    const serviceInput = document.getElementById("service");
-    const giftCodeInput = document.getElementById("gift-code");
-    const addButton = document.getElementById("add-button");
-    const message = document.getElementById("message");
+    const serviceInput =
+      document.getElementById("service");
 
-    addButton.addEventListener("click", async () => {
+    const giftCodeInput =
+      document.getElementById("gift-code");
+
+    const addButton =
+      document.getElementById("add-button");
+
+    const message =
+      document.getElementById("message");
+
+
+    addButton.addEventListener("click", async function () {
 
       const service = serviceInput.value;
       const giftCode = giftCodeInput.value.trim();
 
-      if (!giftCode) {
-        message.textContent = "コードまたはURLを入力してください。";
+      if (giftCode === "") {
+        message.textContent =
+          "コードまたはURLを入力してください。";
         return;
       }
 
@@ -147,31 +159,49 @@
       addButton.textContent = "追加中...";
       message.textContent = "";
 
-      const { error } = await supabase
-        .from("gifts")
-        .insert({
-          gift_code: giftCode,
-          service: service
-        });
+      try {
 
-      if (error) {
+        const result = await client
+          .from("gifts")
+          .insert([
+            {
+              gift_code: giftCode,
+              service: service
+            }
+          ]);
+
+        if (result.error) {
+
+          console.error(result.error);
+
+          message.textContent =
+            "追加に失敗しました。";
+
+          addButton.disabled = false;
+          addButton.textContent = "🎁を追加";
+
+          return;
+        }
+
+        message.textContent = "";
+
+        giftCodeInput.value = "";
+
+        addButton.disabled = false;
+
+        addButton.textContent = "𝑇ℎ𝑎𝑛𝑘 𝑦𝑜𝑢";
+
+      } catch (error) {
+
         console.error(error);
 
         message.textContent =
-          "追加に失敗しました。";
+          "エラーが発生しました。";
 
         addButton.disabled = false;
-        addButton.textContent = "Giftを追加する";
-        return;
+        addButton.textContent = "🎁を追加";
       }
 
-      message.textContent =
-        "🎉 Giftを追加しました！";
-
-      giftCodeInput.value = "";
-
-      addButton.disabled = false;
-      addButton.textContent = "Giftを追加する";
     });
   </script>
 
