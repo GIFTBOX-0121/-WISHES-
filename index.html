@@ -123,7 +123,7 @@ const supabaseClient = window.supabase.createClient(
 async function loadGifts() {
   const giftList = document.getElementById("gift-list");
 
-  const { data: gifts, error: giftError } = await supabaseClient.from("gift")
+  const { data: gifts, error: giftError } = await supabaseClient.from("gifts")
     .select("id, gift_code")
     .order("id", { ascending: true });
 
