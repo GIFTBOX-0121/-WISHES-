@@ -47,11 +47,41 @@ h1 {
   margin: 14px 0;
 }
 
+.control-area {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 5px 8px;
+}
+
+.add-side {
+  width: 46%;
+}
+
+.stats-side {
+  width: 54%;
+  text-align: right;
+}
+
+.open-add-button {
+  width: 100%;
+  padding: 14px 10px;
+  border: none;
+  border-radius: 10px;
+  background: #333;
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
 .counter {
   font-size: 18px;
   font-weight: bold;
-  margin-bottom: 6px;
   color: #d94b4b;
+  margin-bottom: 5px;
+  white-space: nowrap;
 }
 
 .time {
@@ -63,6 +93,52 @@ h1 {
 .total {
   font-size: 13px;
   color: #777;
+}
+
+.add-form {
+  display: none;
+  background: white;
+  padding: 16px;
+  margin: 12px 0 5px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.add-form.show {
+  display: block;
+}
+
+.add-label {
+  text-align: left;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.add-input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 14px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 16px;
+  outline: none;
+}
+
+.submit-add-button {
+  width: 100%;
+  padding: 14px;
+  margin-top: 10px;
+  border: none;
+  border-radius: 8px;
+  background: #333;
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.submit-add-button:disabled {
+  background: #aaa;
 }
 
 .gift-card {
@@ -141,6 +217,17 @@ h1 {
   color: #555;
   text-decoration: none;
 }
+
+@media (max-width: 400px) {
+  .control-area { gap: 10px; }
+  .add-side { width: 42%; }
+  .stats-side { width: 58%; }
+  .open-add-button {
+    font-size: 14px;
+    padding: 13px 6px;
+  }
+  .counter { font-size: 16px; }
+}
 </style>
 </head>
 
@@ -160,14 +247,51 @@ h1 {
 
 <div class="line"></div>
 
-<div class="counter" id="counter">
-未受け取り🎁0件
+<div class="control-area">
+
+  <div class="add-side">
+    <button id="open-add-button" class="open-add-button">
+      🎁を追加
+    </button>
+  </div>
+
+  <div class="stats-side">
+
+    <div class="counter" id="counter">
+      未受け取り🎁0件
+    </div>
+
+    <div class="time" id="update-time"></div>
+
+    <div class="total" id="total">
+      Total：0件
+    </div>
+
+  </div>
+
 </div>
 
-<div class="time" id="update-time"></div>
+<div id="add-form" class="add-form">
 
-<div class="total" id="total">
-Total：0件
+  <div class="add-label">
+    mu-mo Gift URL
+  </div>
+
+  <input
+    id="gift-input"
+    class="add-input"
+    type="url"
+    placeholder="URLを入力"
+    autocomplete="off"
+  >
+
+  <button
+    id="submit-add-button"
+    class="submit-add-button"
+  >
+    🎁を追加
+  </button>
+
 </div>
 
 <div class="line"></div>
@@ -193,25 +317,25 @@ const SUPABASE_KEY =
 "sb_publishable_pZbtlCfKh1BVOxHaeXBIAA_CvfP0o0q";
 
 const client =
-window.supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_KEY
-);
+window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-const giftList =
-document.getElementById("gift-list");
+const giftList = document.getElementById("gift-list");
+const pagination = document.getElementById("pagination");
+const counter = document.getElementById("counter");
+const total = document.getElementById("total");
+const updateTime = document.getElementById("update-time");
 
-const pagination =
-document.getElementById("pagination");
+const openAddButton =
+document.getElementById("open-add-button");
 
-const counter =
-document.getElementById("counter");
+const addForm =
+document.getElementById("add-form");
 
-const total =
-document.getElementById("total");
+const giftInput =
+document.getElementById("gift-input");
 
-const updateTime =
-document.getElementById("update-time");
+const submitAddButton =
+document.getElementById("submit-add-button");
 
 const RECEIVED_PER_PAGE = 20;
 
@@ -238,6 +362,139 @@ function updateTimeDisplay() {
 }
 
 
+/* 追加フォーム */
+
+openAddButton.addEventListener(
+  "click",
+  function () {
+
+    addForm.classList.toggle("show");
+
+    if (addForm.classList.contains("show")) {
+
+      setTimeout(
+        function () {
+          giftInput.focus();
+        },
+        100
+      );
+    }
+  }
+);
+
+
+/* Gift追加 */
+
+submitAddButton.addEventListener(
+  "click",
+  async function () {
+
+    const giftUrl =
+      giftInput.value.trim();
+
+
+    if (!giftUrl) {
+
+      alert("URLを入力してください。");
+
+      return;
+    }
+
+
+    let checkedUrl;
+
+    try {
+
+      checkedUrl =
+        new URL(giftUrl);
+
+      if (
+        checkedUrl.protocol !== "https:" &&
+        checkedUrl.protocol !== "http:"
+      ) {
+        throw new Error();
+      }
+
+    } catch {
+
+      alert("正しいURLを入力してください。");
+
+      return;
+    }
+
+
+    submitAddButton.disabled = true;
+
+    submitAddButton.textContent =
+      "追加中...";
+
+
+    const { error } =
+      await client
+        .from("gifts")
+        .insert({
+          service: "mumo",
+          gift_code: checkedUrl.href
+        });
+
+
+    if (error) {
+
+      console.error(error);
+
+      submitAddButton.disabled = false;
+
+      submitAddButton.textContent =
+        "🎁を追加";
+
+      alert("Giftの追加に失敗しました。");
+
+      return;
+    }
+
+
+    giftInput.value = "";
+
+
+    submitAddButton.textContent =
+      "☆ 𝑻𝒉𝒂𝒏𝒌 𝒚𝒐𝒖 ☆";
+
+
+    await loadGifts();
+
+
+    setTimeout(
+      function () {
+
+        submitAddButton.disabled = false;
+
+        submitAddButton.textContent =
+          "🎁を追加";
+
+        giftInput.focus();
+
+      },
+      1000
+    );
+  }
+);
+
+
+giftInput.addEventListener(
+  "keydown",
+  function (event) {
+
+    if (
+      event.key === "Enter" &&
+      !submitAddButton.disabled
+    ) {
+
+      submitAddButton.click();
+    }
+  }
+);
+
+
 async function loadGifts() {
 
   const { data: gifts, error } =
@@ -247,7 +504,10 @@ async function loadGifts() {
       .eq("service", "mumo")
       .order("id", { ascending: true });
 
+
   if (error) {
+
+    console.error(error);
 
     giftList.innerHTML =
       `<div class="error">
@@ -258,12 +518,18 @@ async function loadGifts() {
   }
 
 
-  const { data: receipts, error: receiptError } =
+  const {
+    data: receipts,
+    error: receiptError
+  } =
     await client
       .from("gift_receipts")
       .select("gift_id");
 
+
   if (receiptError) {
+
+    console.error(receiptError);
 
     giftList.innerHTML =
       `<div class="error">
@@ -342,8 +608,7 @@ function renderGifts() {
 
 
   const start =
-    (currentPage - 1) *
-    RECEIVED_PER_PAGE;
+    (currentPage - 1) * RECEIVED_PER_PAGE;
 
 
   const receivedPage =
@@ -382,8 +647,7 @@ function renderGift(gift) {
   const card =
     document.createElement("div");
 
-  card.className =
-    "gift-card";
+  card.className = "gift-card";
 
 
   if (receivedIds.has(gift.id)) {
@@ -406,40 +670,22 @@ function renderGift(gift) {
 
 
   const button =
-    card.querySelector(
-      ".receive-button"
-    );
+    card.querySelector(".receive-button");
 
 
   button.addEventListener(
     "click",
     async function () {
 
-
-      /*
-        iPhone Safari対策
-
-        ボタンを押した瞬間に
-        新しいタブを先に作る
-      */
-
       const newTab =
-        window.open(
-          "",
-          "_blank"
-        );
+        window.open("", "_blank");
 
 
-      button.disabled =
-        true;
+      button.disabled = true;
 
       button.textContent =
         "確認中...";
 
-
-      /*
-        URL確認
-      */
 
       let giftUrl;
 
@@ -447,127 +693,75 @@ function renderGift(gift) {
       try {
 
         giftUrl =
-          new URL(
-            gift.gift_code
-          );
-
+          new URL(gift.gift_code);
 
         if (
           giftUrl.protocol !== "https:" &&
           giftUrl.protocol !== "http:"
         ) {
-
           throw new Error();
-
         }
 
-
       } catch {
-
 
         if (newTab) {
           newTab.close();
         }
 
-
-        button.disabled =
-          false;
-
+        button.disabled = false;
 
         button.textContent =
           "🎁 ギフトを受け取る";
-
 
         alert(
           "このGiftのURLが正しくありません。"
         );
 
-
         return;
-
       }
 
 
-      /*
-        Giftを1人分確保
-      */
-
       const { error } =
         await client
-          .from(
-            "gift_receipts"
-          )
+          .from("gift_receipts")
           .insert({
-
-            gift_id:
-              gift.id,
-
+            gift_id: gift.id,
             received_at:
-              new Date()
-                .toISOString()
-
+              new Date().toISOString()
           });
 
 
       if (error) {
-
-
-        /*
-          空タブを閉じる
-        */
 
         if (newTab) {
           newTab.close();
         }
 
 
-        /*
-          他の人が先に
-          受け取った場合
-        */
-
-        if (
-          error.code ===
-          "23505"
-        ) {
+        if (error.code === "23505") {
 
           alert(
             "このGiftは他の方が受け取り済みです。"
           );
 
-
           await loadGifts();
 
-
           return;
-
         }
 
 
-        button.disabled =
-          false;
-
+        button.disabled = false;
 
         button.textContent =
           "🎁 ギフトを受け取る";
-
 
         alert(
           "受け取りに失敗しました。"
         );
 
-
         return;
-
       }
 
-
-      /*
-        確保成功
-
-        新しいタブを
-        Gift URLへ移動
-      */
 
       if (newTab) {
 
@@ -576,84 +770,50 @@ function renderGift(gift) {
 
       } else {
 
-
-        /*
-          新しいタブが
-          ブロックされた時だけ
-          同じページで開く
-        */
-
         window.location.href =
           giftUrl.href;
-
       }
 
 
-      /*
-        元のGiftページを
-        最新状態へ更新
-      */
-
       await loadGifts();
-
     }
   );
 
 
-  giftList.appendChild(
-    card
-  );
+  giftList.appendChild(card);
 }
 
 
 function renderPagination() {
 
-  pagination.innerHTML =
-    "";
+  pagination.innerHTML = "";
 
 
   const received =
     allGifts.filter(
-      gift =>
-        receivedIds.has(
-          gift.id
-        )
+      gift => receivedIds.has(gift.id)
     );
 
 
   const totalPages =
     Math.ceil(
-      received.length /
-      RECEIVED_PER_PAGE
+      received.length / RECEIVED_PER_PAGE
     );
 
 
-  if (
-    totalPages <= 1
-  ) {
-
+  if (totalPages <= 1) {
     return;
-
   }
 
 
-  /*
-    前へ
-  */
-
   const previous =
-    document.createElement(
-      "button"
-    );
-
+    document.createElement("button");
 
   previous.className =
     "page-button";
 
-
   previous.textContent =
     "‹ 前へ";
-
 
   previous.disabled =
     currentPage === 1;
@@ -662,34 +822,23 @@ function renderPagination() {
   previous.onclick =
     function () {
 
-      if (
-        currentPage > 1
-      ) {
+      if (currentPage > 1) {
 
         currentPage--;
 
         renderGifts();
-
         renderPagination();
 
         window.scrollTo({
           top: 0,
           behavior: "smooth"
         });
-
       }
-
     };
 
 
-  pagination.appendChild(
-    previous
-  );
+  pagination.appendChild(previous);
 
-
-  /*
-    ページ番号
-  */
 
   for (
     let page = 1;
@@ -697,138 +846,86 @@ function renderPagination() {
     page++
   ) {
 
-
     const button =
-      document.createElement(
-        "button"
-      );
-
+      document.createElement("button");
 
     button.className =
       "page-button";
-
 
     button.textContent =
       page;
 
 
-    if (
-      page ===
-      currentPage
-    ) {
+    if (page === currentPage) {
 
       button.classList.add(
         "active"
       );
-
     }
 
 
     button.onclick =
       function () {
 
-        currentPage =
-          page;
-
+        currentPage = page;
 
         renderGifts();
-
-
         renderPagination();
-
 
         window.scrollTo({
           top: 0,
           behavior: "smooth"
         });
-
       };
 
 
-    pagination.appendChild(
-      button
-    );
-
+    pagination.appendChild(button);
   }
 
 
-  /*
-    次へ
-  */
-
   const next =
-    document.createElement(
-      "button"
-    );
-
+    document.createElement("button");
 
   next.className =
     "page-button";
 
-
   next.textContent =
     "次へ ›";
 
-
   next.disabled =
-    currentPage ===
-    totalPages;
+    currentPage === totalPages;
 
 
   next.onclick =
     function () {
 
-      if (
-        currentPage <
-        totalPages
-      ) {
+      if (currentPage < totalPages) {
 
         currentPage++;
 
         renderGifts();
-
         renderPagination();
 
         window.scrollTo({
           top: 0,
           behavior: "smooth"
         });
-
       }
-
     };
 
 
-  pagination.appendChild(
-    next
-  );
+  pagination.appendChild(next);
 }
 
 
-/*
-  初回読み込み
-*/
-
 loadGifts();
 
-
-/*
-  時刻更新
-*/
-
 updateTimeDisplay();
-
 
 setInterval(
   updateTimeDisplay,
   60000
 );
-
-
-/*
-  Gift一覧を
-  30秒ごとに更新
-*/
 
 setInterval(
   loadGifts,
@@ -836,6 +933,5 @@ setInterval(
 );
 
 </script>
-
 </body>
 </html>
