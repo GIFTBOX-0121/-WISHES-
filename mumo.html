@@ -90,11 +90,6 @@ h1 {
   margin-bottom: 3px;
 }
 
-.total {
-  font-size: 13px;
-  color: #777;
-}
-
 .add-form {
   display: none;
   background: white;
@@ -263,10 +258,6 @@ h1 {
 
     <div class="time" id="update-time"></div>
 
-    <div class="total" id="total">
-      Total：0件
-    </div>
-
   </div>
 
 </div>
@@ -322,7 +313,6 @@ window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const giftList = document.getElementById("gift-list");
 const pagination = document.getElementById("pagination");
 const counter = document.getElementById("counter");
-const total = document.getElementById("total");
 const updateTime = document.getElementById("update-time");
 
 const openAddButton =
@@ -558,9 +548,6 @@ async function loadGifts() {
 
   counter.textContent =
     `未受け取り🎁${unreceivedCount}件`;
-
-  total.textContent =
-    `Total：${allGifts.length}件`;
 
   updateTimeDisplay();
 
