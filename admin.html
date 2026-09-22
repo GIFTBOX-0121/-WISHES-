@@ -1,209 +1,599 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Giftを追加</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<title>GIFTBOX 管理</title>
 
-  <style>
-    body {
-      font-family: sans-serif;
-      background: #f7f7f7;
-      margin: 0;
-      padding: 30px 15px;
-      color: #333;
-    }
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-    }
+<style>
+body {
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    "Helvetica Neue",
+    "Hiragino Kaku Gothic ProN",
+    "Yu Gothic",
+    sans-serif;
 
-    h1 {
-      text-align: center;
-      margin-bottom: 30px;
-    }
+  background: #f7f7f7;
+  margin: 0;
+  padding: 30px 15px;
+  color: #333;
+}
 
-    .box {
-      background: white;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    }
+.container {
+  max-width: 600px;
+  margin: 0 auto;
+}
 
-    label {
-      display: block;
-      font-weight: bold;
-      margin-bottom: 8px;
-    }
+h1 {
+  text-align: center;
+  font-size: 27px;
+  margin: 10px 0 8px;
+}
 
-    select,
-    input {
-      width: 100%;
-      box-sizing: border-box;
-      padding: 13px;
-      margin-bottom: 20px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      font-size: 16px;
-    }
+.subtitle {
+  text-align: center;
+  font-size: 13px;
+  color: #999;
+  margin-bottom: 25px;
+}
 
-    button {
-      width: 100%;
-      padding: 14px;
-      border: none;
-      border-radius: 8px;
-      background: #333;
-      color: white;
-      font-size: 16px;
-      cursor: pointer;
-    }
+.summary {
+  background: #333;
+  color: white;
+  border-radius: 14px;
+  padding: 18px;
+  margin-bottom: 22px;
+  text-align: center;
+}
 
-    button:disabled {
-      background: #aaa;
-    }
+.summary-title {
+  font-size: 13px;
+  opacity: 0.8;
+  margin-bottom: 5px;
+}
 
-    #message {
-      margin-top: 20px;
-      text-align: center;
-      font-weight: bold;
-    }
+.summary-number {
+  font-size: 30px;
+  font-weight: bold;
+}
 
-    .back {
-      display: block;
-      text-align: center;
-      margin-top: 25px;
-      color: #555;
-      text-decoration: none;
-    }
-  </style>
+.day-card {
+  background: white;
+  border-radius: 14px;
+  padding: 20px;
+  margin-bottom: 16px;
+
+  box-shadow:
+    0 2px 8px rgba(0,0,0,0.07);
+}
+
+.date {
+  font-size: 19px;
+  font-weight: bold;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  padding: 9px 4px;
+
+  border-bottom:
+    1px solid #eee;
+}
+
+.row:last-of-type {
+  border-bottom: none;
+}
+
+.service-name {
+  font-size: 15px;
+}
+
+.count {
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.total-row {
+  display: flex;
+  justify-content: space-between;
+
+  margin-top: 12px;
+  padding-top: 13px;
+
+  border-top:
+    2px solid #ddd;
+
+  font-weight: bold;
+}
+
+.empty {
+  background: white;
+  border-radius: 14px;
+  padding: 30px 20px;
+  text-align: center;
+  color: #999;
+}
+
+.error {
+  background: white;
+  border-radius: 14px;
+  padding: 25px 20px;
+  text-align: center;
+  color: #d94b4b;
+}
+
+.update {
+  text-align: center;
+  color: #aaa;
+  font-size: 12px;
+  margin: 20px 0;
+}
+</style>
 </head>
 
 <body>
 
-  <div class="container">
+<div class="container">
 
-    <h1>🎁 Giftを追加</h1>
+<h1>⭐️ GIFTBOX 管理 ⭐️</h1>
 
-    <div class="box">
+<div class="subtitle">
+Gift追加数
+</div>
 
-      <label for="service">サービス</label>
 
-      <select id="service">
-        <option value="itunes">iTunes</option>
-        <option value="recochoku">レコチョク</option>
-        <option value="mumo">mu-mo</option>
-      </select>
+<div class="summary">
 
-      <label for="gift-code">コード / URL</label>
-
-      <input
-        type="text"
-        id="gift-code"
-        placeholder="コードまたはギフトURLを入力"
-      >
-
-      <button type="button" id="add-button">
-        🎁を追加
-      </button>
-
-      <div id="message"></div>
-
-    </div>
-
-    <a href="index.html" class="back">
-      ← サービス選択に戻る
-    </a>
-
+  <div class="summary-title">
+    累計Gift
   </div>
 
-  <script>
-    const SUPABASE_URL =
-      "https://cgnluuynrurbsipwwluo.supabase.co";
+  <div
+    id="grand-total"
+    class="summary-number"
+  >
+    0
+  </div>
 
-    const SUPABASE_KEY =
-      "sb_publishable_pZbtlCfKh1BVOxHaeXBIAA_CvfP0o0q";
+</div>
 
-    const client = window.supabase.createClient(
-      SUPABASE_URL,
-      SUPABASE_KEY
+
+<div id="stats"></div>
+
+
+<div
+  id="update-time"
+  class="update"
+></div>
+
+</div>
+
+
+<script>
+
+const SUPABASE_URL =
+  "https://cgnluuynrurbsipwwluo.supabase.co";
+
+const SUPABASE_KEY =
+  "sb_publishable_pZbtlCfKh1BVOxHaeXBIAA_CvfP0o0q";
+
+
+const client =
+  window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+  );
+
+
+const stats =
+  document.getElementById("stats");
+
+const grandTotal =
+  document.getElementById("grand-total");
+
+const updateTime =
+  document.getElementById("update-time");
+
+
+/* =========================
+   日本時間の日付を取得
+========================= */
+
+function getJSTDate(dateString) {
+
+  const date =
+    new Date(dateString);
+
+
+  const parts =
+    new Intl.DateTimeFormat(
+      "ja-JP",
+      {
+        timeZone:
+          "Asia/Tokyo",
+
+        year:
+          "numeric",
+
+        month:
+          "2-digit",
+
+        day:
+          "2-digit"
+      }
+    ).formatToParts(date);
+
+
+  const values = {};
+
+
+  parts.forEach(
+    part => {
+
+      if (
+        part.type !==
+        "literal"
+      ) {
+
+        values[
+          part.type
+        ] =
+          part.value;
+      }
+    }
+  );
+
+
+  return (
+    values.year +
+    "-" +
+    values.month +
+    "-" +
+    values.day
+  );
+}
+
+
+/* =========================
+   日付表示
+========================= */
+
+function formatDate(dateKey) {
+
+  const [
+    year,
+    month,
+    day
+  ] =
+    dateKey.split("-");
+
+
+  return (
+    Number(month) +
+    "月" +
+    Number(day) +
+    "日"
+  );
+}
+
+
+/* =========================
+   更新時刻
+========================= */
+
+function showUpdateTime() {
+
+  const now =
+    new Date();
+
+
+  const text =
+    new Intl.DateTimeFormat(
+      "ja-JP",
+      {
+        timeZone:
+          "Asia/Tokyo",
+
+        month:
+          "numeric",
+
+        day:
+          "numeric",
+
+        hour:
+          "2-digit",
+
+        minute:
+          "2-digit",
+
+        hour12:
+          false
+      }
+    ).format(now);
+
+
+  updateTime.textContent =
+    text +
+    " 時点";
+}
+
+
+/* =========================
+   集計
+========================= */
+
+async function loadStats() {
+
+  const {
+    data,
+    error
+  } =
+    await client
+      .from("gifts")
+      .select(
+        "id, service, created_at"
+      )
+      .order(
+        "created_at",
+        {
+          ascending: false
+        }
+      );
+
+
+  if (error) {
+
+    console.error(error);
+
+
+    stats.innerHTML =
+      `<div class="error">
+        集計データを読み込めませんでした。
+      </div>`;
+
+
+    return;
+  }
+
+
+  const gifts =
+    data || [];
+
+
+  grandTotal.textContent =
+    gifts.length;
+
+
+  if (
+    gifts.length === 0
+  ) {
+
+    stats.innerHTML =
+      `<div class="empty">
+        まだGiftはありません🎁
+      </div>`;
+
+
+    showUpdateTime();
+
+    return;
+  }
+
+
+  /*
+    日付ごとの箱
+  */
+
+  const grouped = {};
+
+
+  gifts.forEach(
+    gift => {
+
+
+      const date =
+        getJSTDate(
+          gift.created_at
+        );
+
+
+      if (
+        !grouped[date]
+      ) {
+
+        grouped[date] = {
+
+          itunes: 0,
+
+          recochoku: 0,
+
+          mumo: 0,
+
+          total: 0
+
+        };
+      }
+
+
+      /*
+        サービス別
+      */
+
+      if (
+        gift.service ===
+        "itunes"
+      ) {
+
+        grouped[date]
+          .itunes++;
+
+      }
+
+
+      if (
+        gift.service ===
+        "recochoku"
+      ) {
+
+        grouped[date]
+          .recochoku++;
+
+      }
+
+
+      if (
+        gift.service ===
+        "mumo"
+      ) {
+
+        grouped[date]
+          .mumo++;
+
+      }
+
+
+      grouped[date]
+        .total++;
+
+    }
+  );
+
+
+  /*
+    新しい日付から表示
+  */
+
+  const dates =
+    Object.keys(
+      grouped
+    ).sort(
+      (a, b) =>
+        b.localeCompare(a)
     );
 
-    const serviceInput =
-      document.getElementById("service");
 
-    const giftCodeInput =
-      document.getElementById("gift-code");
-
-    const addButton =
-      document.getElementById("add-button");
-
-    const message =
-      document.getElementById("message");
+  stats.innerHTML = "";
 
 
-    addButton.addEventListener("click", async function () {
+  dates.forEach(
+    date => {
 
-      const service = serviceInput.value;
-      const giftCode = giftCodeInput.value.trim();
 
-      if (giftCode === "") {
-        message.textContent =
-          "コードまたはURLを入力してください。";
-        return;
-      }
+      const counts =
+        grouped[date];
 
-      addButton.disabled = true;
-      addButton.textContent = "追加中...";
-      message.textContent = "";
 
-      try {
+      const card =
+        document.createElement(
+          "div"
+        );
 
-        const result = await client
-          .from("gifts")
-          .insert([
-            {
-              gift_code: giftCode,
-              service: service
-            }
-          ]);
 
-        if (result.error) {
+      card.className =
+        "day-card";
 
-          console.error(result.error);
 
-          message.textContent =
-            "追加に失敗しました。";
+      card.innerHTML = `
 
-          addButton.disabled = false;
-          addButton.textContent = "🎁を追加";
+        <div class="date">
+          ${formatDate(date)}
+        </div>
 
-          return;
-        }
 
-        message.textContent = "";
+        <div class="row">
 
-        giftCodeInput.value = "";
+          <span class="service-name">
+            iTunes
+          </span>
 
-        addButton.disabled = false;
+          <span class="count">
+            ${counts.itunes}件
+          </span>
 
-        addButton.textContent = "𝑇ℎ𝑎𝑛𝑘 𝑦𝑜𝑢";
+        </div>
 
-      } catch (error) {
 
-        console.error(error);
+        <div class="row">
 
-        message.textContent =
-          "エラーが発生しました。";
+          <span class="service-name">
+            レコチョク
+          </span>
 
-        addButton.disabled = false;
-        addButton.textContent = "🎁を追加";
-      }
+          <span class="count">
+            ${counts.recochoku}件
+          </span>
 
-    });
-  </script>
+        </div>
+
+
+        <div class="row">
+
+          <span class="service-name">
+            mu-mo
+          </span>
+
+          <span class="count">
+            ${counts.mumo}件
+          </span>
+
+        </div>
+
+
+        <div class="total-row">
+
+          <span>
+            合計
+          </span>
+
+          <span>
+            ${counts.total}件
+          </span>
+
+        </div>
+
+      `;
+
+
+      stats.appendChild(
+        card
+      );
+
+    }
+  );
+
+
+  showUpdateTime();
+}
+
+
+/* =========================
+   読み込み
+========================= */
+
+loadStats();
+
+
+/*
+  30秒ごとに
+  自動更新
+*/
+
+setInterval(
+  loadStats,
+  30000
+);
+
+</script>
 
 </body>
 </html>
