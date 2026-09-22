@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gift 追加</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f7f7f7;
+      margin: 0;
+      padding: 30px 15px;
+      color: #333;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .box {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+
+    select,
+    input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 13px;
+      margin-bottom: 20px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 8px;
+      background: #333;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      background: #aaa;
+    }
+
+    #message {
+      margin-top: 20px;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    .back {
+      display: block;
+      text-align: center;
+      margin-top: 25px;
+      color: #555;
+      text-decoration: none;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+
+    <h1>🎁 Giftを追加</h1>
+
+    <div class="box">
+
+      <label for="service">サービス</label>
+
+      <select id="service">
+        <option value="itunes">iTunes</option>
+        <option value="recochoku">レコチョク</option>
+        <option value="mumo">mu-mo</option>
+      </select>
+
+      <label for="gift-code">コード / URL</label>
+
+      <input
+        type="text"
+        id="gift-code"
+        placeholder="コードまたはギフトURLを入力"
+      >
+
+      <button id="add-button">
+        Giftを追加する
+      </button>
+
+      <div id="message"></div>
+
+    </div>
+
+    <a href="index.html" class="back">
+      ← サービス選択に戻る
+    </a>
+
+  </div>
+
+  <script>
+    const SUPABASE_URL = "https://cgnluuynrurbsipwwluo.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_pZbtlCfKh1BVOxHaeXBIAA_CvfP0o0q";
+
+    const supabase = window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_KEY
+    );
+
+    const serviceInput = document.getElementById("service");
+    const giftCodeInput = document.getElementById("gift-code");
+    const addButton = document.getElementById("add-button");
+    const message = document.getElementById("message");
+
+    addButton.addEventListener("click", async () => {
+
+      const service = serviceInput.value;
+      const giftCode = giftCodeInput.value.trim();
+
+      if (!giftCode) {
+        message.textContent = "コードまたはURLを入力してください。";
+        return;
+      }
+
+      addButton.disabled = true;
+      addButton.textContent = "追加中...";
+      message.textContent = "";
+
+      const { error } = await supabase
+        .from("gifts")
+        .insert({
+          gift_code: giftCode,
+          service: service
+        });
+
+      if (error) {
+        console.error(error);
+
+        message.textContent =
+          "追加に失敗しました。";
+
+        addButton.disabled = false;
+        addButton.textContent = "Giftを追加する";
+        return;
+      }
+
+      message.textContent =
+        "🎉 Giftを追加しました！";
+
+      giftCodeInput.value = "";
+
+      addButton.disabled = false;
+      addButton.textContent = "Giftを追加する";
+    });
+  </script>
+
+</body>
+</html>
