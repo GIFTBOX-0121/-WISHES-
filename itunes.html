@@ -18,6 +18,10 @@ body {
   color: #333;
 }
 
+body.modal-open {
+  overflow: hidden;
+}
+
 .container {
   max-width: 600px;
   margin: 0 auto;
@@ -87,22 +91,60 @@ h1 {
 .time {
   font-size: 12px;
   color: #999;
-  margin-bottom: 3px;
 }
 
-/* Gift追加フォーム */
+/* =========================
+   追加モーダル
+========================= */
 
-.add-form {
+.modal-overlay {
   display: none;
-  background: white;
-  padding: 16px;
-  margin: 12px 0 5px;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.55);
+  padding: 20px;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: center;
 }
 
-.add-form.show {
-  display: block;
+.modal-overlay.show {
+  display: flex;
+}
+
+.modal-box {
+  position: relative;
+  width: 100%;
+  max-width: 500px;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+  background: white;
+  border-radius: 16px;
+  padding: 28px 20px 22px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+}
+
+.modal-close {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  width: 42px;
+  height: 42px;
+  border: none;
+  background: transparent;
+  color: #555;
+  font-size: 30px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.modal-title {
+  text-align: center;
+  font-size: 21px;
+  font-weight: bold;
+  margin: 4px 35px 22px;
 }
 
 .add-label {
@@ -142,7 +184,17 @@ h1 {
   background: #aaa;
 }
 
-/* Gift一覧 */
+.modal-note {
+  margin-top: 12px;
+  text-align: center;
+  color: #999;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+/* =========================
+   Gift一覧
+========================= */
 
 .gift-card {
   background: white;
@@ -212,7 +264,9 @@ h1 {
   border-radius: 10px;
 }
 
-/* ページ番号 */
+/* =========================
+   ページ番号
+========================= */
 
 .pagination {
   display: flex;
@@ -255,7 +309,6 @@ h1 {
 }
 
 @media (max-width: 400px) {
-
   .control-area {
     gap: 10px;
   }
@@ -275,6 +328,14 @@ h1 {
 
   .counter {
     font-size: 16px;
+  }
+
+  .modal-overlay {
+    padding: 14px;
+  }
+
+  .modal-box {
+    padding: 26px 16px 20px;
   }
 }
 </style>
@@ -299,14 +360,12 @@ h1 {
 <div class="control-area">
 
   <div class="add-side">
-
     <button
       id="open-add-button"
       class="open-add-button"
     >
       🎁を追加
     </button>
-
   </div>
 
   <div class="stats-side">
@@ -324,32 +383,6 @@ h1 {
     ></div>
 
   </div>
-
-</div>
-
-<div
-  id="add-form"
-  class="add-form"
->
-
-  <div class="add-label">
-    iTunesコード
-  </div>
-
-  <input
-    id="gift-input"
-    class="add-input"
-    type="text"
-    placeholder="コードを入力"
-    autocomplete="off"
-  >
-
-  <button
-    id="submit-add-button"
-    class="submit-add-button"
-  >
-    🎁を追加
-  </button>
 
 </div>
 
@@ -373,6 +406,67 @@ h1 {
 
 </div>
 
+
+<!-- =========================
+     Gift追加モーダル
+========================= -->
+
+<div
+  id="add-modal"
+  class="modal-overlay"
+>
+
+  <div
+    class="modal-box"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="modal-title"
+  >
+
+    <button
+      id="modal-close"
+      class="modal-close"
+      aria-label="閉じる"
+    >
+      ×
+    </button>
+
+    <div
+      id="modal-title"
+      class="modal-title"
+    >
+      🎁 Giftを追加
+    </div>
+
+    <div class="add-label">
+      iTunesコード
+    </div>
+
+    <input
+      id="gift-input"
+      class="add-input"
+      type="text"
+      placeholder="コードを入力"
+      autocomplete="off"
+    >
+
+    <button
+      id="submit-add-button"
+      class="submit-add-button"
+    >
+      🎁を追加
+    </button>
+
+    <div class="modal-note">
+      続けて複数のGiftを追加できます。<br>
+      終わったら右上の「×」で閉じてください。
+    </div>
+
+  </div>
+
+</div>
+
+
 <script>
 
 const SUPABASE_URL =
@@ -386,6 +480,7 @@ window.supabase.createClient(
   SUPABASE_URL,
   SUPABASE_KEY
 );
+
 
 const giftList =
 document.getElementById("gift-list");
@@ -402,8 +497,11 @@ document.getElementById("update-time");
 const openAddButton =
 document.getElementById("open-add-button");
 
-const addForm =
-document.getElementById("add-form");
+const addModal =
+document.getElementById("add-modal");
+
+const modalClose =
+document.getElementById("modal-close");
 
 const giftInput =
 document.getElementById("gift-input");
@@ -411,12 +509,11 @@ document.getElementById("gift-input");
 const submitAddButton =
 document.getElementById("submit-add-button");
 
+
 const RECEIVED_PER_PAGE = 20;
 
 let currentPage = 1;
-
 let allGifts = [];
-
 let receivedIds = new Set();
 
 
@@ -450,32 +547,70 @@ function updateTimeDisplay() {
 
 
 /* =========================
-   追加フォームを開く
+   モーダル
 ========================= */
+
+function openModal() {
+
+  addModal.classList.add("show");
+
+  document.body.classList.add(
+    "modal-open"
+  );
+
+  setTimeout(
+    function () {
+      giftInput.focus();
+    },
+    100
+  );
+}
+
+
+function closeModal() {
+
+  addModal.classList.remove("show");
+
+  document.body.classList.remove(
+    "modal-open"
+  );
+
+  giftInput.value = "";
+
+  submitAddButton.disabled = false;
+
+  submitAddButton.textContent =
+    "🎁を追加";
+}
+
 
 openAddButton.addEventListener(
   "click",
-  function () {
+  openModal
+);
 
-    addForm.classList.toggle(
-      "show"
-    );
+
+modalClose.addEventListener(
+  "click",
+  closeModal
+);
+
+
+/*
+  黒い背景部分をタップしても
+  閉じる
+*/
+
+addModal.addEventListener(
+  "click",
+  function (event) {
 
     if (
-      addForm.classList.contains(
-        "show"
-      )
+      event.target === addModal
     ) {
 
-      setTimeout(
-        function () {
-          giftInput.focus();
-        },
-        100
-      );
-
+      closeModal();
     }
-
   }
 );
 
@@ -491,6 +626,7 @@ submitAddButton.addEventListener(
     const giftCode =
       giftInput.value.trim();
 
+
     if (!giftCode) {
 
       alert(
@@ -500,11 +636,13 @@ submitAddButton.addEventListener(
       return;
     }
 
+
     submitAddButton.disabled =
       true;
 
     submitAddButton.textContent =
       "追加中...";
+
 
     const { error } =
       await client
@@ -518,6 +656,7 @@ submitAddButton.addEventListener(
             giftCode
 
         });
+
 
     if (error) {
 
@@ -536,16 +675,51 @@ submitAddButton.addEventListener(
       return;
     }
 
+
+    /*
+      入力欄だけ空にする。
+      モーダルは閉じない。
+    */
+
     giftInput.value =
       "";
+
 
     submitAddButton.textContent =
       "☆ 𝑻𝒉𝒂𝒏𝒌 𝒚𝒐𝒖 ☆";
 
+
+    /*
+      モーダルの裏側の
+      Gift一覧を更新
+    */
+
     await loadGifts();
+
+
+    /*
+      1秒後に次のGiftを
+      そのまま入力可能
+    */
 
     setTimeout(
       function () {
+
+        /*
+          途中で×を押して
+          モーダルを閉じていた場合は
+          何もしない
+        */
+
+        if (
+          !addModal.classList.contains(
+            "show"
+          )
+        ) {
+
+          return;
+        }
+
 
         submitAddButton.disabled =
           false;
@@ -574,8 +748,9 @@ giftInput.addEventListener(
       !submitAddButton.disabled
     ) {
 
-      submitAddButton.click();
+      event.preventDefault();
 
+      submitAddButton.click();
     }
 
   }
@@ -606,6 +781,7 @@ async function copyText(text) {
 
     console.log(error);
   }
+
 
   try {
 
@@ -682,6 +858,7 @@ async function loadGifts() {
         }
       );
 
+
   if (error) {
 
     console.error(error);
@@ -694,6 +871,7 @@ async function loadGifts() {
     return;
   }
 
+
   const {
     data: receipts,
     error: receiptError
@@ -703,6 +881,7 @@ async function loadGifts() {
       .select(
         "gift_id"
       );
+
 
   if (receiptError) {
 
@@ -718,8 +897,10 @@ async function loadGifts() {
     return;
   }
 
+
   allGifts =
     gifts || [];
+
 
   receivedIds =
     new Set(
@@ -729,6 +910,7 @@ async function loadGifts() {
       )
     );
 
+
   const unreceivedCount =
     allGifts.filter(
       gift =>
@@ -737,10 +919,13 @@ async function loadGifts() {
         )
     ).length;
 
+
   counter.textContent =
     `未受け取り🎁${unreceivedCount}件`;
 
+
   updateTimeDisplay();
+
 
   const receivedCount =
     allGifts.filter(
@@ -749,6 +934,7 @@ async function loadGifts() {
           gift.id
         )
     ).length;
+
 
   const totalPages =
     Math.max(
@@ -759,6 +945,7 @@ async function loadGifts() {
       )
     );
 
+
   if (
     currentPage >
     totalPages
@@ -767,6 +954,7 @@ async function loadGifts() {
     currentPage =
       totalPages;
   }
+
 
   renderGifts();
 
@@ -783,6 +971,7 @@ function renderGifts() {
   giftList.innerHTML =
     "";
 
+
   const unreceived =
     allGifts.filter(
       gift =>
@@ -790,6 +979,7 @@ function renderGifts() {
           gift.id
         )
     );
+
 
   const received =
     allGifts.filter(
@@ -799,9 +989,11 @@ function renderGifts() {
         )
     );
 
+
   const start =
     (currentPage - 1) *
     RECEIVED_PER_PAGE;
+
 
   const receivedPage =
     received.slice(
@@ -810,11 +1002,13 @@ function renderGifts() {
       RECEIVED_PER_PAGE
     );
 
+
   const display =
     [
       ...unreceived,
       ...receivedPage
     ];
+
 
   if (
     display.length === 0
@@ -829,6 +1023,7 @@ function renderGifts() {
 
     return;
   }
+
 
   display.forEach(
     renderGift
@@ -847,8 +1042,10 @@ function renderGift(gift) {
       "div"
     );
 
+
   card.className =
     "gift-card";
+
 
   if (
     receivedIds.has(
@@ -861,22 +1058,27 @@ function renderGift(gift) {
         受け取り済み
       </div>`;
 
+
     giftList.appendChild(
       card
     );
 
+
     return;
   }
+
 
   card.innerHTML =
     `<button class="receive-button">
       コードを受け取る
     </button>`;
 
+
   const button =
     card.querySelector(
       ".receive-button"
     );
+
 
   button.addEventListener(
     "click",
@@ -885,8 +1087,10 @@ function renderGift(gift) {
       button.disabled =
         true;
 
+
       button.textContent =
         "受け取り中...";
+
 
       const { error } =
         await client
@@ -904,7 +1108,9 @@ function renderGift(gift) {
 
           });
 
+
       if (error) {
+
 
         if (
           error.code ===
@@ -915,23 +1121,30 @@ function renderGift(gift) {
             "このGiftは他の方が受け取り済みです。"
           );
 
+
           await loadGifts();
+
 
           return;
         }
 
+
         button.disabled =
           false;
 
+
         button.textContent =
           "コードを受け取る";
+
 
         alert(
           "受け取りに失敗しました。"
         );
 
+
         return;
       }
+
 
       card.innerHTML = `
 
@@ -953,20 +1166,24 @@ function renderGift(gift) {
 
       `;
 
+
       const code =
         card.querySelector(
           ".code"
         );
+
 
       const copyButton =
         card.querySelector(
           ".copy-button"
         );
 
+
       const completeButton =
         card.querySelector(
           ".complete-button"
         );
+
 
       async function doCopy() {
 
@@ -975,10 +1192,12 @@ function renderGift(gift) {
             gift.gift_code
           );
 
+
         if (success) {
 
           copyButton.textContent =
             "✓ コピーしました";
+
 
           setTimeout(
             function () {
@@ -998,15 +1217,18 @@ function renderGift(gift) {
         }
       }
 
+
       code.addEventListener(
         "click",
         doCopy
       );
 
+
       copyButton.addEventListener(
         "click",
         doCopy
       );
+
 
       completeButton.addEventListener(
         "click",
@@ -1015,8 +1237,10 @@ function renderGift(gift) {
           completeButton.disabled =
             true;
 
+
           completeButton.textContent =
             "処理中...";
+
 
           await loadGifts();
 
@@ -1025,6 +1249,7 @@ function renderGift(gift) {
 
     }
   );
+
 
   giftList.appendChild(
     card
@@ -1041,6 +1266,7 @@ function renderPagination() {
   pagination.innerHTML =
     "";
 
+
   const received =
     allGifts.filter(
       gift =>
@@ -1049,11 +1275,13 @@ function renderPagination() {
         )
     );
 
+
   const totalPages =
     Math.ceil(
       received.length /
       RECEIVED_PER_PAGE
     );
+
 
   if (
     totalPages <= 1
@@ -1062,19 +1290,24 @@ function renderPagination() {
     return;
   }
 
+
   const previous =
     document.createElement(
       "button"
     );
 
+
   previous.className =
     "page-button";
+
 
   previous.textContent =
     "‹ 前へ";
 
+
   previous.disabled =
     currentPage === 1;
+
 
   previous.onclick =
     function () {
@@ -1091,9 +1324,11 @@ function renderPagination() {
       }
     };
 
+
   pagination.appendChild(
     previous
   );
+
 
   for (
     let page = 1;
@@ -1106,11 +1341,14 @@ function renderPagination() {
         "button"
       );
 
+
     button.className =
       "page-button";
 
+
     button.textContent =
       page;
+
 
     if (
       page === currentPage
@@ -1120,6 +1358,7 @@ function renderPagination() {
         "active"
       );
     }
+
 
     button.onclick =
       function () {
@@ -1132,25 +1371,31 @@ function renderPagination() {
         renderPagination();
       };
 
+
     pagination.appendChild(
       button
     );
   }
+
 
   const next =
     document.createElement(
       "button"
     );
 
+
   next.className =
     "page-button";
+
 
   next.textContent =
     "次へ ›";
 
+
   next.disabled =
     currentPage ===
     totalPages;
+
 
   next.onclick =
     function () {
@@ -1168,6 +1413,7 @@ function renderPagination() {
       }
     };
 
+
   pagination.appendChild(
     next
   );
@@ -1182,10 +1428,12 @@ loadGifts();
 
 updateTimeDisplay();
 
+
 setInterval(
   updateTimeDisplay,
   60000
 );
+
 
 setInterval(
   loadGifts,
