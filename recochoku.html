@@ -18,6 +18,10 @@ body {
   color: #333;
 }
 
+body.modal-open {
+  overflow: hidden;
+}
+
 .container {
   max-width: 600px;
   margin: 0 auto;
@@ -87,20 +91,60 @@ h1 {
 .time {
   font-size: 12px;
   color: #999;
-  margin-bottom: 3px;
 }
 
-.add-form {
+/* =========================
+   追加モーダル
+========================= */
+
+.modal-overlay {
   display: none;
-  background: white;
-  padding: 16px;
-  margin: 12px 0 5px;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.55);
+  padding: 20px;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: center;
 }
 
-.add-form.show {
-  display: block;
+.modal-overlay.show {
+  display: flex;
+}
+
+.modal-box {
+  position: relative;
+  width: 100%;
+  max-width: 500px;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+  background: white;
+  border-radius: 16px;
+  padding: 28px 20px 22px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+}
+
+.modal-close {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  width: 42px;
+  height: 42px;
+  border: none;
+  background: transparent;
+  color: #555;
+  font-size: 30px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.modal-title {
+  text-align: center;
+  font-size: 21px;
+  font-weight: bold;
+  margin: 4px 35px 22px;
 }
 
 .add-label {
@@ -144,6 +188,18 @@ h1 {
   background: #aaa;
 }
 
+.modal-note {
+  margin-top: 12px;
+  text-align: center;
+  color: #999;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+/* =========================
+   Gift一覧
+========================= */
+
 .gift-card {
   background: white;
   padding: 20px;
@@ -180,6 +236,10 @@ h1 {
   padding: 15px;
   border-radius: 10px;
 }
+
+/* =========================
+   ページ番号
+========================= */
 
 .pagination {
   display: flex;
@@ -222,9 +282,17 @@ h1 {
 }
 
 @media (max-width: 400px) {
-  .control-area { gap: 10px; }
-  .add-side { width: 42%; }
-  .stats-side { width: 58%; }
+  .control-area {
+    gap: 10px;
+  }
+
+  .add-side {
+    width: 42%;
+  }
+
+  .stats-side {
+    width: 58%;
+  }
 
   .open-add-button {
     font-size: 14px;
@@ -233,6 +301,14 @@ h1 {
 
   .counter {
     font-size: 16px;
+  }
+
+  .modal-overlay {
+    padding: 14px;
+  }
+
+  .modal-box {
+    padding: 26px 16px 20px;
   }
 }
 </style>
@@ -257,42 +333,29 @@ h1 {
 <div class="control-area">
 
   <div class="add-side">
-    <button id="open-add-button" class="open-add-button">
+    <button
+      id="open-add-button"
+      class="open-add-button"
+    >
       🎁を追加
     </button>
   </div>
 
   <div class="stats-side">
 
-    <div class="counter" id="counter">
+    <div
+      class="counter"
+      id="counter"
+    >
       未受け取り🎁0件
     </div>
 
-    <div class="time" id="update-time"></div>
+    <div
+      class="time"
+      id="update-time"
+    ></div>
 
   </div>
-
-</div>
-
-<div id="add-form" class="add-form">
-
-  <div class="add-label">
-    レコチョク Gift
-  </div>
-
-  <textarea
-    id="gift-input"
-    class="add-input"
-    placeholder="レコチョクのギフト文章をそのまま貼り付け"
-    autocomplete="off"
-  ></textarea>
-
-  <button
-    id="submit-add-button"
-    class="submit-add-button"
-  >
-    🎁を追加
-  </button>
 
 </div>
 
@@ -302,13 +365,75 @@ h1 {
 
 <div id="gift-list"></div>
 
-<div id="pagination" class="pagination"></div>
+<div
+  id="pagination"
+  class="pagination"
+></div>
 
 <a href="index.html" class="back">
 ← サービス選択に戻る
 </a>
 
 </div>
+
+
+<!-- Gift追加モーダル -->
+
+<div
+  id="add-modal"
+  class="modal-overlay"
+>
+
+  <div
+    class="modal-box"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="modal-title"
+  >
+
+    <button
+      id="modal-close"
+      class="modal-close"
+      aria-label="閉じる"
+    >
+      ×
+    </button>
+
+    <div
+      id="modal-title"
+      class="modal-title"
+    >
+      🎁 Giftを追加
+    </div>
+
+    <div class="add-label">
+      レコチョク Gift
+    </div>
+
+    <textarea
+      id="gift-input"
+      class="add-input"
+      placeholder="レコチョクのギフト文章をそのまま貼り付け"
+      autocomplete="off"
+    ></textarea>
+
+    <button
+      id="submit-add-button"
+      class="submit-add-button"
+    >
+      🎁を追加
+    </button>
+
+    <div class="modal-note">
+      ギフト文章をそのまま貼り付けてOKです。<br>
+      続けて複数のGiftを追加できます。<br>
+      終わったら右上の「×」で閉じてください。
+    </div>
+
+  </div>
+
+</div>
+
 
 <script>
 
@@ -339,8 +464,11 @@ document.getElementById("update-time");
 const openAddButton =
 document.getElementById("open-add-button");
 
-const addForm =
-document.getElementById("add-form");
+const addModal =
+document.getElementById("add-modal");
+
+const modalClose =
+document.getElementById("modal-close");
 
 const giftInput =
 document.getElementById("gift-input");
@@ -354,6 +482,10 @@ let currentPage = 1;
 let allGifts = [];
 let receivedIds = new Set();
 
+
+/* =========================
+   時刻
+========================= */
 
 function updateTimeDisplay() {
 
@@ -378,7 +510,9 @@ function updateTimeDisplay() {
 }
 
 
-/* 文章の中からURLだけ取得 */
+/* =========================
+   URL抽出
+========================= */
 
 function extractUrl(text) {
 
@@ -391,10 +525,6 @@ function extractUrl(text) {
 
   let url =
     match[0].trim();
-
-  /*
-    文末についてしまった記号を除去
-  */
 
   url =
     url.replace(
@@ -423,30 +553,73 @@ function extractUrl(text) {
 }
 
 
-/* 追加フォーム */
+/* =========================
+   モーダル
+========================= */
+
+function openModal() {
+
+  addModal.classList.add("show");
+
+  document.body.classList.add(
+    "modal-open"
+  );
+
+  setTimeout(
+    function () {
+      giftInput.focus();
+    },
+    100
+  );
+}
+
+
+function closeModal() {
+
+  addModal.classList.remove("show");
+
+  document.body.classList.remove(
+    "modal-open"
+  );
+
+  giftInput.value = "";
+
+  submitAddButton.disabled = false;
+
+  submitAddButton.textContent =
+    "🎁を追加";
+}
+
 
 openAddButton.addEventListener(
   "click",
-  function () {
+  openModal
+);
 
-    addForm.classList.toggle("show");
+
+modalClose.addEventListener(
+  "click",
+  closeModal
+);
+
+
+addModal.addEventListener(
+  "click",
+  function (event) {
 
     if (
-      addForm.classList.contains("show")
+      event.target === addModal
     ) {
 
-      setTimeout(
-        function () {
-          giftInput.focus();
-        },
-        100
-      );
+      closeModal();
     }
   }
 );
 
 
-/* Gift追加 */
+/* =========================
+   Gift追加
+========================= */
 
 submitAddButton.addEventListener(
   "click",
@@ -454,6 +627,7 @@ submitAddButton.addEventListener(
 
     const giftText =
       giftInput.value.trim();
+
 
     if (!giftText) {
 
@@ -532,6 +706,15 @@ submitAddButton.addEventListener(
     setTimeout(
       function () {
 
+        if (
+          !addModal.classList.contains(
+            "show"
+          )
+        ) {
+          return;
+        }
+
+
         submitAddButton.disabled =
           false;
 
@@ -547,25 +730,9 @@ submitAddButton.addEventListener(
 );
 
 
-/* Ctrl/Cmd + Enterでも追加 */
-
-giftInput.addEventListener(
-  "keydown",
-  function (event) {
-
-    if (
-      event.key === "Enter" &&
-      (event.ctrlKey || event.metaKey) &&
-      !submitAddButton.disabled
-    ) {
-
-      submitAddButton.click();
-    }
-  }
-);
-
-
-/* Gift読み込み */
+/* =========================
+   Gift読み込み
+========================= */
 
 async function loadGifts() {
 
@@ -681,7 +848,9 @@ async function loadGifts() {
 }
 
 
-/* Gift一覧 */
+/* =========================
+   Gift一覧
+========================= */
 
 function renderGifts() {
 
@@ -744,19 +913,25 @@ function renderGifts() {
 }
 
 
-/* Giftカード */
+/* =========================
+   Giftカード
+========================= */
 
 function renderGift(gift) {
 
   const card =
-    document.createElement("div");
+    document.createElement(
+      "div"
+    );
 
   card.className =
     "gift-card";
 
 
   if (
-    receivedIds.has(gift.id)
+    receivedIds.has(
+      gift.id
+    )
   ) {
 
     card.innerHTML =
@@ -764,7 +939,9 @@ function renderGift(gift) {
         受け取り済み
       </div>`;
 
-    giftList.appendChild(card);
+    giftList.appendChild(
+      card
+    );
 
     return;
   }
@@ -787,7 +964,6 @@ function renderGift(gift) {
     async function () {
 
       /*
-        タップ直後に別タブを確保
         iPhone Safari対策
       */
 
@@ -819,7 +995,6 @@ function renderGift(gift) {
           giftUrl.protocol !== "https:" &&
           giftUrl.protocol !== "http:"
         ) {
-
           throw new Error();
         }
 
@@ -911,11 +1086,15 @@ function renderGift(gift) {
   );
 
 
-  giftList.appendChild(card);
+  giftList.appendChild(
+    card
+  );
 }
 
 
-/* ページ番号 */
+/* =========================
+   ページ番号
+========================= */
 
 function renderPagination() {
 
@@ -926,7 +1105,9 @@ function renderPagination() {
   const received =
     allGifts.filter(
       gift =>
-        receivedIds.has(gift.id)
+        receivedIds.has(
+          gift.id
+        )
     );
 
 
@@ -940,7 +1121,6 @@ function renderPagination() {
   if (
     totalPages <= 1
   ) {
-
     return;
   }
 
@@ -1077,6 +1257,10 @@ function renderPagination() {
   );
 }
 
+
+/* =========================
+   初回
+========================= */
 
 loadGifts();
 
