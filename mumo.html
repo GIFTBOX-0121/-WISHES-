@@ -18,6 +18,10 @@ body {
   color: #333;
 }
 
+body.modal-open {
+  overflow: hidden;
+}
+
 .container {
   max-width: 600px;
   margin: 0 auto;
@@ -87,20 +91,60 @@ h1 {
 .time {
   font-size: 12px;
   color: #999;
-  margin-bottom: 3px;
 }
 
-.add-form {
+/* =========================
+   追加モーダル
+========================= */
+
+.modal-overlay {
   display: none;
-  background: white;
-  padding: 16px;
-  margin: 12px 0 5px;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.55);
+  padding: 20px;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: center;
 }
 
-.add-form.show {
-  display: block;
+.modal-overlay.show {
+  display: flex;
+}
+
+.modal-box {
+  position: relative;
+  width: 100%;
+  max-width: 500px;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+  background: white;
+  border-radius: 16px;
+  padding: 28px 20px 22px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+}
+
+.modal-close {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  width: 42px;
+  height: 42px;
+  border: none;
+  background: transparent;
+  color: #555;
+  font-size: 30px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.modal-title {
+  text-align: center;
+  font-size: 21px;
+  font-weight: bold;
+  margin: 4px 35px 22px;
 }
 
 .add-label {
@@ -112,11 +156,19 @@ h1 {
 .add-input {
   box-sizing: border-box;
   width: 100%;
+  min-height: 150px;
   padding: 14px;
   border: 1px solid #ccc;
   border-radius: 8px;
   font-size: 16px;
+  font-family: inherit;
+  line-height: 1.6;
   outline: none;
+  resize: vertical;
+}
+
+.add-input:focus {
+  border-color: #888;
 }
 
 .submit-add-button {
@@ -135,6 +187,18 @@ h1 {
 .submit-add-button:disabled {
   background: #aaa;
 }
+
+.modal-note {
+  margin-top: 12px;
+  text-align: center;
+  color: #999;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+/* =========================
+   Gift一覧
+========================= */
 
 .gift-card {
   background: white;
@@ -172,6 +236,10 @@ h1 {
   padding: 15px;
   border-radius: 10px;
 }
+
+/* =========================
+   ページ番号
+========================= */
 
 .pagination {
   display: flex;
@@ -214,14 +282,34 @@ h1 {
 }
 
 @media (max-width: 400px) {
-  .control-area { gap: 10px; }
-  .add-side { width: 42%; }
-  .stats-side { width: 58%; }
+  .control-area {
+    gap: 10px;
+  }
+
+  .add-side {
+    width: 42%;
+  }
+
+  .stats-side {
+    width: 58%;
+  }
+
   .open-add-button {
     font-size: 14px;
     padding: 13px 6px;
   }
-  .counter { font-size: 16px; }
+
+  .counter {
+    font-size: 16px;
+  }
+
+  .modal-overlay {
+    padding: 14px;
+  }
+
+  .modal-box {
+    padding: 26px 16px 20px;
+  }
 }
 </style>
 </head>
@@ -245,43 +333,29 @@ h1 {
 <div class="control-area">
 
   <div class="add-side">
-    <button id="open-add-button" class="open-add-button">
+    <button
+      id="open-add-button"
+      class="open-add-button"
+    >
       🎁を追加
     </button>
   </div>
 
   <div class="stats-side">
 
-    <div class="counter" id="counter">
+    <div
+      class="counter"
+      id="counter"
+    >
       未受け取り🎁0件
     </div>
 
-    <div class="time" id="update-time"></div>
+    <div
+      class="time"
+      id="update-time"
+    ></div>
 
   </div>
-
-</div>
-
-<div id="add-form" class="add-form">
-
-  <div class="add-label">
-    mu-mo Gift URL
-  </div>
-
-  <input
-    id="gift-input"
-    class="add-input"
-    type="url"
-    placeholder="URLを入力"
-    autocomplete="off"
-  >
-
-  <button
-    id="submit-add-button"
-    class="submit-add-button"
-  >
-    🎁を追加
-  </button>
 
 </div>
 
@@ -291,13 +365,75 @@ h1 {
 
 <div id="gift-list"></div>
 
-<div id="pagination" class="pagination"></div>
+<div
+  id="pagination"
+  class="pagination"
+></div>
 
 <a href="index.html" class="back">
 ← サービス選択に戻る
 </a>
 
 </div>
+
+
+<!-- Gift追加モーダル -->
+
+<div
+  id="add-modal"
+  class="modal-overlay"
+>
+
+  <div
+    class="modal-box"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="modal-title"
+  >
+
+    <button
+      id="modal-close"
+      class="modal-close"
+      aria-label="閉じる"
+    >
+      ×
+    </button>
+
+    <div
+      id="modal-title"
+      class="modal-title"
+    >
+      🎁 Giftを追加
+    </div>
+
+    <div class="add-label">
+      mu-mo Gift
+    </div>
+
+    <textarea
+      id="gift-input"
+      class="add-input"
+      placeholder="mu-moのギフト文章をそのまま貼り付け"
+      autocomplete="off"
+    ></textarea>
+
+    <button
+      id="submit-add-button"
+      class="submit-add-button"
+    >
+      🎁を追加
+    </button>
+
+    <div class="modal-note">
+      ギフト文章をそのまま貼り付けてOKです。<br>
+      続けて複数のGiftを追加できます。<br>
+      終わったら右上の「×」で閉じてください。
+    </div>
+
+  </div>
+
+</div>
+
 
 <script>
 
@@ -308,18 +444,31 @@ const SUPABASE_KEY =
 "sb_publishable_pZbtlCfKh1BVOxHaeXBIAA_CvfP0o0q";
 
 const client =
-window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
 
-const giftList = document.getElementById("gift-list");
-const pagination = document.getElementById("pagination");
-const counter = document.getElementById("counter");
-const updateTime = document.getElementById("update-time");
+const giftList =
+document.getElementById("gift-list");
+
+const pagination =
+document.getElementById("pagination");
+
+const counter =
+document.getElementById("counter");
+
+const updateTime =
+document.getElementById("update-time");
 
 const openAddButton =
 document.getElementById("open-add-button");
 
-const addForm =
-document.getElementById("add-form");
+const addModal =
+document.getElementById("add-modal");
+
+const modalClose =
+document.getElementById("modal-close");
 
 const giftInput =
 document.getElementById("gift-input");
@@ -334,86 +483,178 @@ let allGifts = [];
 let receivedIds = new Set();
 
 
+/* =========================
+   時刻
+========================= */
+
 function updateTimeDisplay() {
 
   const now = new Date();
 
-  const month = now.getMonth() + 1;
-  const day = now.getDate();
+  const month =
+    now.getMonth() + 1;
+
+  const day =
+    now.getDate();
 
   const hours =
-    String(now.getHours()).padStart(2, "0");
+    String(now.getHours())
+      .padStart(2, "0");
 
   const minutes =
-    String(now.getMinutes()).padStart(2, "0");
+    String(now.getMinutes())
+      .padStart(2, "0");
 
   updateTime.textContent =
     `${month}月${day}日 ${hours}:${minutes}時点`;
 }
 
 
-/* 追加フォーム */
+/* =========================
+   URL抽出
+========================= */
+
+function extractUrl(text) {
+
+  const match =
+    text.match(/https?:\/\/[^\s<>"']+/i);
+
+  if (!match) {
+    return null;
+  }
+
+  let url =
+    match[0].trim();
+
+  url =
+    url.replace(
+      /[。、，．）)\]】〉》」』]+$/,
+      ""
+    );
+
+  try {
+
+    const checkedUrl =
+      new URL(url);
+
+    if (
+      checkedUrl.protocol !== "https:" &&
+      checkedUrl.protocol !== "http:"
+    ) {
+      return null;
+    }
+
+    return checkedUrl.href;
+
+  } catch {
+
+    return null;
+  }
+}
+
+
+/* =========================
+   モーダル
+========================= */
+
+function openModal() {
+
+  addModal.classList.add("show");
+
+  document.body.classList.add(
+    "modal-open"
+  );
+
+  setTimeout(
+    function () {
+      giftInput.focus();
+    },
+    100
+  );
+}
+
+
+function closeModal() {
+
+  addModal.classList.remove("show");
+
+  document.body.classList.remove(
+    "modal-open"
+  );
+
+  giftInput.value = "";
+
+  submitAddButton.disabled = false;
+
+  submitAddButton.textContent =
+    "🎁を追加";
+}
+
 
 openAddButton.addEventListener(
   "click",
-  function () {
+  openModal
+);
 
-    addForm.classList.toggle("show");
 
-    if (addForm.classList.contains("show")) {
+modalClose.addEventListener(
+  "click",
+  closeModal
+);
 
-      setTimeout(
-        function () {
-          giftInput.focus();
-        },
-        100
-      );
+
+addModal.addEventListener(
+  "click",
+  function (event) {
+
+    if (
+      event.target === addModal
+    ) {
+
+      closeModal();
     }
   }
 );
 
 
-/* Gift追加 */
+/* =========================
+   Gift追加
+========================= */
 
 submitAddButton.addEventListener(
   "click",
   async function () {
 
-    const giftUrl =
+    const giftText =
       giftInput.value.trim();
+
+
+    if (!giftText) {
+
+      alert(
+        "ギフト文章を貼り付けてください。"
+      );
+
+      return;
+    }
+
+
+    const giftUrl =
+      extractUrl(giftText);
 
 
     if (!giftUrl) {
 
-      alert("URLを入力してください。");
+      alert(
+        "文章の中にGift URLが見つかりませんでした。"
+      );
 
       return;
     }
 
 
-    let checkedUrl;
-
-    try {
-
-      checkedUrl =
-        new URL(giftUrl);
-
-      if (
-        checkedUrl.protocol !== "https:" &&
-        checkedUrl.protocol !== "http:"
-      ) {
-        throw new Error();
-      }
-
-    } catch {
-
-      alert("正しいURLを入力してください。");
-
-      return;
-    }
-
-
-    submitAddButton.disabled = true;
+    submitAddButton.disabled =
+      true;
 
     submitAddButton.textContent =
       "追加中...";
@@ -423,8 +664,13 @@ submitAddButton.addEventListener(
       await client
         .from("gifts")
         .insert({
-          service: "mumo",
-          gift_code: checkedUrl.href
+
+          service:
+            "mumo",
+
+          gift_code:
+            giftUrl
+
         });
 
 
@@ -432,18 +678,22 @@ submitAddButton.addEventListener(
 
       console.error(error);
 
-      submitAddButton.disabled = false;
+      submitAddButton.disabled =
+        false;
 
       submitAddButton.textContent =
         "🎁を追加";
 
-      alert("Giftの追加に失敗しました。");
+      alert(
+        "Giftの追加に失敗しました。"
+      );
 
       return;
     }
 
 
-    giftInput.value = "";
+    giftInput.value =
+      "";
 
 
     submitAddButton.textContent =
@@ -456,7 +706,17 @@ submitAddButton.addEventListener(
     setTimeout(
       function () {
 
-        submitAddButton.disabled = false;
+        if (
+          !addModal.classList.contains(
+            "show"
+          )
+        ) {
+          return;
+        }
+
+
+        submitAddButton.disabled =
+          false;
 
         submitAddButton.textContent =
           "🎁を追加";
@@ -470,29 +730,29 @@ submitAddButton.addEventListener(
 );
 
 
-giftInput.addEventListener(
-  "keydown",
-  function (event) {
-
-    if (
-      event.key === "Enter" &&
-      !submitAddButton.disabled
-    ) {
-
-      submitAddButton.click();
-    }
-  }
-);
-
+/* =========================
+   Gift読み込み
+========================= */
 
 async function loadGifts() {
 
-  const { data: gifts, error } =
+  const {
+    data: gifts,
+    error
+  } =
     await client
       .from("gifts")
-      .select("id, gift_code, service")
-      .eq("service", "mumo")
-      .order("id", { ascending: true });
+      .select(
+        "id, gift_code, service"
+      )
+      .eq(
+        "service",
+        "mumo"
+      )
+      .order(
+        "id",
+        { ascending: true }
+      );
 
 
   if (error) {
@@ -530,7 +790,9 @@ async function loadGifts() {
   }
 
 
-  allGifts = gifts || [];
+  allGifts =
+    gifts || [];
+
 
   receivedIds =
     new Set(
@@ -542,19 +804,22 @@ async function loadGifts() {
 
   const unreceivedCount =
     allGifts.filter(
-      gift => !receivedIds.has(gift.id)
+      gift =>
+        !receivedIds.has(gift.id)
     ).length;
 
 
   counter.textContent =
     `未受け取り🎁${unreceivedCount}件`;
 
+
   updateTimeDisplay();
 
 
   const receivedCount =
     allGifts.filter(
-      gift => receivedIds.has(gift.id)
+      gift =>
+        receivedIds.has(gift.id)
     ).length;
 
 
@@ -562,13 +827,19 @@ async function loadGifts() {
     Math.max(
       1,
       Math.ceil(
-        receivedCount / RECEIVED_PER_PAGE
+        receivedCount /
+        RECEIVED_PER_PAGE
       )
     );
 
 
-  if (currentPage > totalPages) {
-    currentPage = totalPages;
+  if (
+    currentPage >
+    totalPages
+  ) {
+
+    currentPage =
+      totalPages;
   }
 
 
@@ -577,31 +848,44 @@ async function loadGifts() {
 }
 
 
+/* =========================
+   Gift一覧
+========================= */
+
 function renderGifts() {
 
-  giftList.innerHTML = "";
+  giftList.innerHTML =
+    "";
 
 
   const unreceived =
     allGifts.filter(
-      gift => !receivedIds.has(gift.id)
+      gift =>
+        !receivedIds.has(
+          gift.id
+        )
     );
 
 
   const received =
     allGifts.filter(
-      gift => receivedIds.has(gift.id)
+      gift =>
+        receivedIds.has(
+          gift.id
+        )
     );
 
 
   const start =
-    (currentPage - 1) * RECEIVED_PER_PAGE;
+    (currentPage - 1) *
+    RECEIVED_PER_PAGE;
 
 
   const receivedPage =
     received.slice(
       start,
-      start + RECEIVED_PER_PAGE
+      start +
+      RECEIVED_PER_PAGE
     );
 
 
@@ -612,7 +896,9 @@ function renderGifts() {
     ];
 
 
-  if (display.length === 0) {
+  if (
+    display.length === 0
+  ) {
 
     giftList.innerHTML =
       `<div class="gift-card">
@@ -625,26 +911,41 @@ function renderGifts() {
   }
 
 
-  display.forEach(renderGift);
+  display.forEach(
+    renderGift
+  );
 }
 
+
+/* =========================
+   Giftカード
+========================= */
 
 function renderGift(gift) {
 
   const card =
-    document.createElement("div");
+    document.createElement(
+      "div"
+    );
 
-  card.className = "gift-card";
+  card.className =
+    "gift-card";
 
 
-  if (receivedIds.has(gift.id)) {
+  if (
+    receivedIds.has(
+      gift.id
+    )
+  ) {
 
     card.innerHTML =
       `<div class="received">
         受け取り済み
       </div>`;
 
-    giftList.appendChild(card);
+    giftList.appendChild(
+      card
+    );
 
     return;
   }
@@ -657,7 +958,9 @@ function renderGift(gift) {
 
 
   const button =
-    card.querySelector(".receive-button");
+    card.querySelector(
+      ".receive-button"
+    );
 
 
   button.addEventListener(
@@ -665,10 +968,14 @@ function renderGift(gift) {
     async function () {
 
       const newTab =
-        window.open("", "_blank");
+        window.open(
+          "",
+          "_blank"
+        );
 
 
-      button.disabled = true;
+      button.disabled =
+        true;
 
       button.textContent =
         "確認中...";
@@ -680,7 +987,9 @@ function renderGift(gift) {
       try {
 
         giftUrl =
-          new URL(gift.gift_code);
+          new URL(
+            gift.gift_code
+          );
 
         if (
           giftUrl.protocol !== "https:" &&
@@ -695,7 +1004,8 @@ function renderGift(gift) {
           newTab.close();
         }
 
-        button.disabled = false;
+        button.disabled =
+          false;
 
         button.textContent =
           "🎁 ギフトを受け取る";
@@ -712,9 +1022,14 @@ function renderGift(gift) {
         await client
           .from("gift_receipts")
           .insert({
-            gift_id: gift.id,
+
+            gift_id:
+              gift.id,
+
             received_at:
-              new Date().toISOString()
+              new Date()
+                .toISOString()
+
           });
 
 
@@ -725,7 +1040,10 @@ function renderGift(gift) {
         }
 
 
-        if (error.code === "23505") {
+        if (
+          error.code ===
+          "23505"
+        ) {
 
           alert(
             "このGiftは他の方が受け取り済みです。"
@@ -737,7 +1055,8 @@ function renderGift(gift) {
         }
 
 
-        button.disabled = false;
+        button.disabled =
+          false;
 
         button.textContent =
           "🎁 ギフトを受け取る";
@@ -767,34 +1086,49 @@ function renderGift(gift) {
   );
 
 
-  giftList.appendChild(card);
+  giftList.appendChild(
+    card
+  );
 }
 
 
+/* =========================
+   ページ番号
+========================= */
+
 function renderPagination() {
 
-  pagination.innerHTML = "";
+  pagination.innerHTML =
+    "";
 
 
   const received =
     allGifts.filter(
-      gift => receivedIds.has(gift.id)
+      gift =>
+        receivedIds.has(
+          gift.id
+        )
     );
 
 
   const totalPages =
     Math.ceil(
-      received.length / RECEIVED_PER_PAGE
+      received.length /
+      RECEIVED_PER_PAGE
     );
 
 
-  if (totalPages <= 1) {
+  if (
+    totalPages <= 1
+  ) {
     return;
   }
 
 
   const previous =
-    document.createElement("button");
+    document.createElement(
+      "button"
+    );
 
   previous.className =
     "page-button";
@@ -809,7 +1143,9 @@ function renderPagination() {
   previous.onclick =
     function () {
 
-      if (currentPage > 1) {
+      if (
+        currentPage > 1
+      ) {
 
         currentPage--;
 
@@ -824,7 +1160,9 @@ function renderPagination() {
     };
 
 
-  pagination.appendChild(previous);
+  pagination.appendChild(
+    previous
+  );
 
 
   for (
@@ -834,7 +1172,9 @@ function renderPagination() {
   ) {
 
     const button =
-      document.createElement("button");
+      document.createElement(
+        "button"
+      );
 
     button.className =
       "page-button";
@@ -843,7 +1183,9 @@ function renderPagination() {
       page;
 
 
-    if (page === currentPage) {
+    if (
+      page === currentPage
+    ) {
 
       button.classList.add(
         "active"
@@ -854,7 +1196,8 @@ function renderPagination() {
     button.onclick =
       function () {
 
-        currentPage = page;
+        currentPage =
+          page;
 
         renderGifts();
         renderPagination();
@@ -866,12 +1209,16 @@ function renderPagination() {
       };
 
 
-    pagination.appendChild(button);
+    pagination.appendChild(
+      button
+    );
   }
 
 
   const next =
-    document.createElement("button");
+    document.createElement(
+      "button"
+    );
 
   next.className =
     "page-button";
@@ -880,13 +1227,17 @@ function renderPagination() {
     "次へ ›";
 
   next.disabled =
-    currentPage === totalPages;
+    currentPage ===
+    totalPages;
 
 
   next.onclick =
     function () {
 
-      if (currentPage < totalPages) {
+      if (
+        currentPage <
+        totalPages
+      ) {
 
         currentPage++;
 
@@ -901,18 +1252,26 @@ function renderPagination() {
     };
 
 
-  pagination.appendChild(next);
+  pagination.appendChild(
+    next
+  );
 }
 
+
+/* =========================
+   初回
+========================= */
 
 loadGifts();
 
 updateTimeDisplay();
 
+
 setInterval(
   updateTimeDisplay,
   60000
 );
+
 
 setInterval(
   loadGifts,
@@ -920,5 +1279,6 @@ setInterval(
 );
 
 </script>
+
 </body>
 </html>
