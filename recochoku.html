@@ -112,11 +112,19 @@ h1 {
 .add-input {
   box-sizing: border-box;
   width: 100%;
+  min-height: 150px;
   padding: 14px;
   border: 1px solid #ccc;
   border-radius: 8px;
   font-size: 16px;
+  font-family: inherit;
+  line-height: 1.6;
   outline: none;
+  resize: vertical;
+}
+
+.add-input:focus {
+  border-color: #888;
 }
 
 .submit-add-button {
@@ -217,11 +225,15 @@ h1 {
   .control-area { gap: 10px; }
   .add-side { width: 42%; }
   .stats-side { width: 58%; }
+
   .open-add-button {
     font-size: 14px;
     padding: 13px 6px;
   }
-  .counter { font-size: 16px; }
+
+  .counter {
+    font-size: 16px;
+  }
 }
 </style>
 </head>
@@ -265,16 +277,15 @@ h1 {
 <div id="add-form" class="add-form">
 
   <div class="add-label">
-    レコチョク Gift URL
+    レコチョク Gift
   </div>
 
-  <input
+  <textarea
     id="gift-input"
     class="add-input"
-    type="url"
-    placeholder="URLを入力"
+    placeholder="レコチョクのギフト文章をそのまま貼り付け"
     autocomplete="off"
-  >
+  ></textarea>
 
   <button
     id="submit-add-button"
@@ -308,12 +319,22 @@ const SUPABASE_KEY =
 "sb_publishable_pZbtlCfKh1BVOxHaeXBIAA_CvfP0o0q";
 
 const client =
-window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
 
-const giftList = document.getElementById("gift-list");
-const pagination = document.getElementById("pagination");
-const counter = document.getElementById("counter");
-const updateTime = document.getElementById("update-time");
+const giftList =
+document.getElementById("gift-list");
+
+const pagination =
+document.getElementById("pagination");
+
+const counter =
+document.getElementById("counter");
+
+const updateTime =
+document.getElementById("update-time");
 
 const openAddButton =
 document.getElementById("open-add-button");
@@ -338,17 +359,67 @@ function updateTimeDisplay() {
 
   const now = new Date();
 
-  const month = now.getMonth() + 1;
-  const day = now.getDate();
+  const month =
+    now.getMonth() + 1;
+
+  const day =
+    now.getDate();
 
   const hours =
-    String(now.getHours()).padStart(2, "0");
+    String(now.getHours())
+      .padStart(2, "0");
 
   const minutes =
-    String(now.getMinutes()).padStart(2, "0");
+    String(now.getMinutes())
+      .padStart(2, "0");
 
   updateTime.textContent =
     `${month}月${day}日 ${hours}:${minutes}時点`;
+}
+
+
+/* 文章の中からURLだけ取得 */
+
+function extractUrl(text) {
+
+  const match =
+    text.match(/https?:\/\/[^\s<>"']+/i);
+
+  if (!match) {
+    return null;
+  }
+
+  let url =
+    match[0].trim();
+
+  /*
+    文末についてしまった記号を除去
+  */
+
+  url =
+    url.replace(
+      /[。、，．）)\]】〉》」』]+$/,
+      ""
+    );
+
+  try {
+
+    const checkedUrl =
+      new URL(url);
+
+    if (
+      checkedUrl.protocol !== "https:" &&
+      checkedUrl.protocol !== "http:"
+    ) {
+      return null;
+    }
+
+    return checkedUrl.href;
+
+  } catch {
+
+    return null;
+  }
 }
 
 
@@ -360,7 +431,9 @@ openAddButton.addEventListener(
 
     addForm.classList.toggle("show");
 
-    if (addForm.classList.contains("show")) {
+    if (
+      addForm.classList.contains("show")
+    ) {
 
       setTimeout(
         function () {
@@ -379,41 +452,35 @@ submitAddButton.addEventListener(
   "click",
   async function () {
 
-    const giftUrl =
+    const giftText =
       giftInput.value.trim();
+
+    if (!giftText) {
+
+      alert(
+        "ギフト文章を貼り付けてください。"
+      );
+
+      return;
+    }
+
+
+    const giftUrl =
+      extractUrl(giftText);
 
 
     if (!giftUrl) {
 
-      alert("URLを入力してください。");
+      alert(
+        "文章の中にGift URLが見つかりませんでした。"
+      );
 
       return;
     }
 
 
-    let checkedUrl;
-
-    try {
-
-      checkedUrl =
-        new URL(giftUrl);
-
-      if (
-        checkedUrl.protocol !== "https:" &&
-        checkedUrl.protocol !== "http:"
-      ) {
-        throw new Error();
-      }
-
-    } catch {
-
-      alert("正しいURLを入力してください。");
-
-      return;
-    }
-
-
-    submitAddButton.disabled = true;
+    submitAddButton.disabled =
+      true;
 
     submitAddButton.textContent =
       "追加中...";
@@ -423,8 +490,13 @@ submitAddButton.addEventListener(
       await client
         .from("gifts")
         .insert({
-          service: "recochoku",
-          gift_code: checkedUrl.href
+
+          service:
+            "recochoku",
+
+          gift_code:
+            giftUrl
+
         });
 
 
@@ -432,18 +504,22 @@ submitAddButton.addEventListener(
 
       console.error(error);
 
-      submitAddButton.disabled = false;
+      submitAddButton.disabled =
+        false;
 
       submitAddButton.textContent =
         "🎁を追加";
 
-      alert("Giftの追加に失敗しました。");
+      alert(
+        "Giftの追加に失敗しました。"
+      );
 
       return;
     }
 
 
-    giftInput.value = "";
+    giftInput.value =
+      "";
 
 
     submitAddButton.textContent =
@@ -456,7 +532,8 @@ submitAddButton.addEventListener(
     setTimeout(
       function () {
 
-        submitAddButton.disabled = false;
+        submitAddButton.disabled =
+          false;
 
         submitAddButton.textContent =
           "🎁を追加";
@@ -470,12 +547,15 @@ submitAddButton.addEventListener(
 );
 
 
+/* Ctrl/Cmd + Enterでも追加 */
+
 giftInput.addEventListener(
   "keydown",
   function (event) {
 
     if (
       event.key === "Enter" &&
+      (event.ctrlKey || event.metaKey) &&
       !submitAddButton.disabled
     ) {
 
@@ -485,14 +565,27 @@ giftInput.addEventListener(
 );
 
 
+/* Gift読み込み */
+
 async function loadGifts() {
 
-  const { data: gifts, error } =
+  const {
+    data: gifts,
+    error
+  } =
     await client
       .from("gifts")
-      .select("id, gift_code, service")
-      .eq("service", "recochoku")
-      .order("id", { ascending: true });
+      .select(
+        "id, gift_code, service"
+      )
+      .eq(
+        "service",
+        "recochoku"
+      )
+      .order(
+        "id",
+        { ascending: true }
+      );
 
 
   if (error) {
@@ -530,7 +623,9 @@ async function loadGifts() {
   }
 
 
-  allGifts = gifts || [];
+  allGifts =
+    gifts || [];
+
 
   receivedIds =
     new Set(
@@ -542,19 +637,22 @@ async function loadGifts() {
 
   const unreceivedCount =
     allGifts.filter(
-      gift => !receivedIds.has(gift.id)
+      gift =>
+        !receivedIds.has(gift.id)
     ).length;
 
 
   counter.textContent =
     `未受け取り🎁${unreceivedCount}件`;
 
+
   updateTimeDisplay();
 
 
   const receivedCount =
     allGifts.filter(
-      gift => receivedIds.has(gift.id)
+      gift =>
+        receivedIds.has(gift.id)
     ).length;
 
 
@@ -562,13 +660,19 @@ async function loadGifts() {
     Math.max(
       1,
       Math.ceil(
-        receivedCount / RECEIVED_PER_PAGE
+        receivedCount /
+        RECEIVED_PER_PAGE
       )
     );
 
 
-  if (currentPage > totalPages) {
-    currentPage = totalPages;
+  if (
+    currentPage >
+    totalPages
+  ) {
+
+    currentPage =
+      totalPages;
   }
 
 
@@ -577,31 +681,38 @@ async function loadGifts() {
 }
 
 
+/* Gift一覧 */
+
 function renderGifts() {
 
-  giftList.innerHTML = "";
+  giftList.innerHTML =
+    "";
 
 
   const unreceived =
     allGifts.filter(
-      gift => !receivedIds.has(gift.id)
+      gift =>
+        !receivedIds.has(gift.id)
     );
 
 
   const received =
     allGifts.filter(
-      gift => receivedIds.has(gift.id)
+      gift =>
+        receivedIds.has(gift.id)
     );
 
 
   const start =
-    (currentPage - 1) * RECEIVED_PER_PAGE;
+    (currentPage - 1) *
+    RECEIVED_PER_PAGE;
 
 
   const receivedPage =
     received.slice(
       start,
-      start + RECEIVED_PER_PAGE
+      start +
+      RECEIVED_PER_PAGE
     );
 
 
@@ -612,7 +723,9 @@ function renderGifts() {
     ];
 
 
-  if (display.length === 0) {
+  if (
+    display.length === 0
+  ) {
 
     giftList.innerHTML =
       `<div class="gift-card">
@@ -625,19 +738,26 @@ function renderGifts() {
   }
 
 
-  display.forEach(renderGift);
+  display.forEach(
+    renderGift
+  );
 }
 
+
+/* Giftカード */
 
 function renderGift(gift) {
 
   const card =
     document.createElement("div");
 
-  card.className = "gift-card";
+  card.className =
+    "gift-card";
 
 
-  if (receivedIds.has(gift.id)) {
+  if (
+    receivedIds.has(gift.id)
+  ) {
 
     card.innerHTML =
       `<div class="received">
@@ -657,18 +777,29 @@ function renderGift(gift) {
 
 
   const button =
-    card.querySelector(".receive-button");
+    card.querySelector(
+      ".receive-button"
+    );
 
 
   button.addEventListener(
     "click",
     async function () {
 
+      /*
+        タップ直後に別タブを確保
+        iPhone Safari対策
+      */
+
       const newTab =
-        window.open("", "_blank");
+        window.open(
+          "",
+          "_blank"
+        );
 
 
-      button.disabled = true;
+      button.disabled =
+        true;
 
       button.textContent =
         "確認中...";
@@ -680,12 +811,15 @@ function renderGift(gift) {
       try {
 
         giftUrl =
-          new URL(gift.gift_code);
+          new URL(
+            gift.gift_code
+          );
 
         if (
           giftUrl.protocol !== "https:" &&
           giftUrl.protocol !== "http:"
         ) {
+
           throw new Error();
         }
 
@@ -695,7 +829,8 @@ function renderGift(gift) {
           newTab.close();
         }
 
-        button.disabled = false;
+        button.disabled =
+          false;
 
         button.textContent =
           "🎁 ギフトを受け取る";
@@ -712,9 +847,14 @@ function renderGift(gift) {
         await client
           .from("gift_receipts")
           .insert({
-            gift_id: gift.id,
+
+            gift_id:
+              gift.id,
+
             received_at:
-              new Date().toISOString()
+              new Date()
+                .toISOString()
+
           });
 
 
@@ -725,7 +865,10 @@ function renderGift(gift) {
         }
 
 
-        if (error.code === "23505") {
+        if (
+          error.code ===
+          "23505"
+        ) {
 
           alert(
             "このGiftは他の方が受け取り済みです。"
@@ -737,7 +880,8 @@ function renderGift(gift) {
         }
 
 
-        button.disabled = false;
+        button.disabled =
+          false;
 
         button.textContent =
           "🎁 ギフトを受け取る";
@@ -771,30 +915,40 @@ function renderGift(gift) {
 }
 
 
+/* ページ番号 */
+
 function renderPagination() {
 
-  pagination.innerHTML = "";
+  pagination.innerHTML =
+    "";
 
 
   const received =
     allGifts.filter(
-      gift => receivedIds.has(gift.id)
+      gift =>
+        receivedIds.has(gift.id)
     );
 
 
   const totalPages =
     Math.ceil(
-      received.length / RECEIVED_PER_PAGE
+      received.length /
+      RECEIVED_PER_PAGE
     );
 
 
-  if (totalPages <= 1) {
+  if (
+    totalPages <= 1
+  ) {
+
     return;
   }
 
 
   const previous =
-    document.createElement("button");
+    document.createElement(
+      "button"
+    );
 
   previous.className =
     "page-button";
@@ -809,7 +963,9 @@ function renderPagination() {
   previous.onclick =
     function () {
 
-      if (currentPage > 1) {
+      if (
+        currentPage > 1
+      ) {
 
         currentPage--;
 
@@ -824,7 +980,9 @@ function renderPagination() {
     };
 
 
-  pagination.appendChild(previous);
+  pagination.appendChild(
+    previous
+  );
 
 
   for (
@@ -834,7 +992,9 @@ function renderPagination() {
   ) {
 
     const button =
-      document.createElement("button");
+      document.createElement(
+        "button"
+      );
 
     button.className =
       "page-button";
@@ -843,7 +1003,9 @@ function renderPagination() {
       page;
 
 
-    if (page === currentPage) {
+    if (
+      page === currentPage
+    ) {
 
       button.classList.add(
         "active"
@@ -854,7 +1016,8 @@ function renderPagination() {
     button.onclick =
       function () {
 
-        currentPage = page;
+        currentPage =
+          page;
 
         renderGifts();
         renderPagination();
@@ -866,12 +1029,16 @@ function renderPagination() {
       };
 
 
-    pagination.appendChild(button);
+    pagination.appendChild(
+      button
+    );
   }
 
 
   const next =
-    document.createElement("button");
+    document.createElement(
+      "button"
+    );
 
   next.className =
     "page-button";
@@ -880,13 +1047,17 @@ function renderPagination() {
     "次へ ›";
 
   next.disabled =
-    currentPage === totalPages;
+    currentPage ===
+    totalPages;
 
 
   next.onclick =
     function () {
 
-      if (currentPage < totalPages) {
+      if (
+        currentPage <
+        totalPages
+      ) {
 
         currentPage++;
 
@@ -901,7 +1072,9 @@ function renderPagination() {
     };
 
 
-  pagination.appendChild(next);
+  pagination.appendChild(
+    next
+  );
 }
 
 
@@ -909,10 +1082,12 @@ loadGifts();
 
 updateTimeDisplay();
 
+
 setInterval(
   updateTimeDisplay,
   60000
 );
+
 
 setInterval(
   loadGifts,
@@ -920,5 +1095,6 @@ setInterval(
 );
 
 </script>
+
 </body>
 </html>
