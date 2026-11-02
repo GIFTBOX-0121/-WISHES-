@@ -479,6 +479,11 @@ document.getElementById("submit-add-button");
 const RECEIVED_PER_PAGE = 20;
 
 /*
+  Gift本体を1000件ずつ最後まで取得
+*/
+const GIFT_FETCH_SIZE = 1000;
+
+/*
   mu-moのGift IDに該当する
   受取履歴だけを取得する
 */
@@ -737,6 +742,88 @@ submitAddButton.addEventListener(
 
 
 /* =========================
+   mu-mo Giftを全件取得
+========================= */
+
+async function loadAllMumoGifts() {
+
+  const result = [];
+
+  let from = 0;
+
+
+  while (true) {
+
+    const to =
+      from +
+      GIFT_FETCH_SIZE -
+      1;
+
+
+    const {
+      data,
+      error
+    } =
+      await client
+        .from("gifts")
+        .select(
+          "id, gift_code, service"
+        )
+        .eq(
+          "service",
+          "mumo"
+        )
+        .order(
+          "id",
+          {
+            ascending: true
+          }
+        )
+        .range(
+          from,
+          to
+        );
+
+
+    if (error) {
+
+      throw error;
+    }
+
+
+    const rows =
+      data || [];
+
+
+    result.push(
+      ...rows
+    );
+
+
+    /*
+      1000件未満なら
+      最後まで取得完了
+    */
+
+    if (
+      rows.length <
+      GIFT_FETCH_SIZE
+    ) {
+
+      break;
+    }
+
+
+    from +=
+      GIFT_FETCH_SIZE;
+  }
+
+
+  return result;
+}
+
+
+/* =========================
    mu-mo Giftの
    受取履歴だけ取得
 ========================= */
@@ -833,26 +920,20 @@ async function loadReceiptsForGifts(
 
 async function loadGifts() {
 
-  const {
-    data: gifts,
-    error
-  } =
-    await client
-      .from("gifts")
-      .select(
-        "id, gift_code, service"
-      )
-      .eq(
-        "service",
-        "mumo"
-      )
-      .order(
-        "id",
-        { ascending: true }
-      );
+  let gifts;
 
 
-  if (error) {
+  /*
+    mu-mo Giftを
+    1000件ずつ最後まで取得
+  */
+
+  try {
+
+    gifts =
+      await loadAllMumoGifts();
+
+  } catch (error) {
 
     console.error(error);
 
