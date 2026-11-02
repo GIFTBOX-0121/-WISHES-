@@ -478,6 +478,12 @@ document.getElementById("submit-add-button");
 
 const RECEIVED_PER_PAGE = 20;
 
+/*
+  mu-moのGift IDに該当する
+  受取履歴だけを取得する
+*/
+const RECEIPT_ID_CHUNK = 200;
+
 let currentPage = 1;
 let allGifts = [];
 let receivedIds = new Set();
@@ -731,6 +737,97 @@ submitAddButton.addEventListener(
 
 
 /* =========================
+   mu-mo Giftの
+   受取履歴だけ取得
+========================= */
+
+async function loadReceiptsForGifts(
+  gifts
+) {
+
+  const ids =
+    gifts.map(
+      gift =>
+        gift.id
+    );
+
+
+  const result =
+    new Set();
+
+
+  if (
+    ids.length === 0
+  ) {
+
+    return result;
+  }
+
+
+  /*
+    Gift IDを200件ずつ分割して
+    そのIDに該当する受取履歴だけ取得
+  */
+
+  for (
+    let i = 0;
+    i < ids.length;
+    i += RECEIPT_ID_CHUNK
+  ) {
+
+    const chunk =
+      ids.slice(
+        i,
+        i + RECEIPT_ID_CHUNK
+      );
+
+
+    const {
+      data,
+      error
+    } =
+      await client
+        .from(
+          "gift_receipts"
+        )
+        .select(
+          "gift_id"
+        )
+        .in(
+          "gift_id",
+          chunk
+        );
+
+
+    if (
+      error
+    ) {
+
+      throw error;
+    }
+
+
+    (
+      data ||
+      []
+    ).forEach(
+      item => {
+
+        result.add(
+          item.gift_id
+        );
+
+      }
+    );
+
+  }
+
+
+  return result;
+}
+
+
+/* =========================
    Gift読み込み
 ========================= */
 
@@ -768,18 +865,30 @@ async function loadGifts() {
   }
 
 
-  const {
-    data: receipts,
-    error: receiptError
-  } =
-    await client
-      .from("gift_receipts")
-      .select("gift_id");
+  allGifts =
+    gifts || [];
 
 
-  if (receiptError) {
+  /*
+    全gift_receiptsを取得せず、
+    今取得したmu-mo GiftのIDに該当する
+    受取履歴だけを取得する
+  */
 
-    console.error(receiptError);
+  try {
+
+    receivedIds =
+      await loadReceiptsForGifts(
+        allGifts
+      );
+
+  } catch (
+    receiptError
+  ) {
+
+    console.error(
+      receiptError
+    );
 
     giftList.innerHTML =
       `<div class="error">
@@ -788,18 +897,6 @@ async function loadGifts() {
 
     return;
   }
-
-
-  allGifts =
-    gifts || [];
-
-
-  receivedIds =
-    new Set(
-      (receipts || []).map(
-        item => item.gift_id
-      )
-    );
 
 
   const unreceivedCount =
@@ -1067,6 +1164,16 @@ function renderGift(gift) {
 
         return;
       }
+
+
+      /*
+        DBへの登録成功直後に
+        このGiftを受取済みとして保持
+      */
+
+      receivedIds.add(
+        gift.id
+      );
 
 
       if (newTab) {
