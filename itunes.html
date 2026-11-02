@@ -481,7 +481,6 @@ window.supabase.createClient(
   SUPABASE_KEY
 );
 
-
 const giftList =
 document.getElementById("gift-list");
 
@@ -509,8 +508,13 @@ document.getElementById("gift-input");
 const submitAddButton =
 document.getElementById("submit-add-button");
 
-
 const RECEIVED_PER_PAGE = 20;
+
+/*
+  受取履歴を一度に大量照合しないため、
+  iTunesのGift IDを200件ずつ確認する
+*/
+const RECEIPT_ID_CHUNK = 200;
 
 let currentPage = 1;
 let allGifts = [];
@@ -596,11 +600,6 @@ modalClose.addEventListener(
 );
 
 
-/*
-  黒い背景部分をタップしても
-  閉じる
-*/
-
 addModal.addEventListener(
   "click",
   function (event) {
@@ -676,11 +675,6 @@ submitAddButton.addEventListener(
     }
 
 
-    /*
-      入力欄だけ空にする。
-      モーダルは閉じない。
-    */
-
     giftInput.value =
       "";
 
@@ -689,27 +683,11 @@ submitAddButton.addEventListener(
       "☆ 𝑻𝒉𝒂𝒏𝒌 𝒚𝒐𝒖 ☆";
 
 
-    /*
-      モーダルの裏側の
-      Gift一覧を更新
-    */
-
     await loadGifts();
 
 
-    /*
-      1秒後に次のGiftを
-      そのまま入力可能
-    */
-
     setTimeout(
       function () {
-
-        /*
-          途中で×を押して
-          モーダルを閉じていた場合は
-          何もしない
-        */
 
         if (
           !addModal.classList.contains(
@@ -833,6 +811,86 @@ async function copyText(text) {
 
 
 /* =========================
+   このiTunes Giftの
+   受取履歴だけを取得
+========================= */
+
+async function loadReceiptsForGifts(gifts) {
+
+  const ids =
+    gifts.map(
+      gift => gift.id
+    );
+
+  const result =
+    new Set();
+
+
+  if (
+    ids.length === 0
+  ) {
+
+    return result;
+  }
+
+
+  /*
+    200件ずつgift_receiptsと照合する
+  */
+
+  for (
+    let i = 0;
+    i < ids.length;
+    i += RECEIPT_ID_CHUNK
+  ) {
+
+    const chunk =
+      ids.slice(
+        i,
+        i + RECEIPT_ID_CHUNK
+      );
+
+
+    const {
+      data,
+      error
+    } =
+      await client
+        .from(
+          "gift_receipts"
+        )
+        .select(
+          "gift_id"
+        )
+        .in(
+          "gift_id",
+          chunk
+        );
+
+
+    if (error) {
+
+      throw error;
+    }
+
+
+    (data || []).forEach(
+      item => {
+
+        result.add(
+          item.gift_id
+        );
+
+      }
+    );
+  }
+
+
+  return result;
+}
+
+
+/* =========================
    Gift読み込み
 ========================= */
 
@@ -872,18 +930,26 @@ async function loadGifts() {
   }
 
 
-  const {
-    data: receipts,
-    error: receiptError
-  } =
-    await client
-      .from("gift_receipts")
-      .select(
-        "gift_id"
+  allGifts =
+    gifts || [];
+
+
+  /*
+    ★ここが今回の修正箇所
+
+    gift_receipts全体を取得せず、
+    今取得したiTunes GiftのIDだけを
+    200件ずつ照合する。
+  */
+
+  try {
+
+    receivedIds =
+      await loadReceiptsForGifts(
+        allGifts
       );
 
-
-  if (receiptError) {
+  } catch (receiptError) {
 
     console.error(
       receiptError
@@ -898,18 +964,10 @@ async function loadGifts() {
   }
 
 
-  allGifts =
-    gifts || [];
-
-
-  receivedIds =
-    new Set(
-      (receipts || []).map(
-        item =>
-          item.gift_id
-      )
-    );
-
+  /*
+    gift_receiptsに存在しないものだけが
+    本当の「未受け取り」
+  */
 
   const unreceivedCount =
     allGifts.filter(
@@ -1144,6 +1202,16 @@ function renderGift(gift) {
 
         return;
       }
+
+
+      /*
+        今受け取ったGiftを
+        この画面上でも受取済みにする
+      */
+
+      receivedIds.add(
+        gift.id
+      );
 
 
       card.innerHTML = `
