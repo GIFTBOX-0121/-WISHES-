@@ -479,6 +479,11 @@ document.getElementById("submit-add-button");
 const RECEIVED_PER_PAGE = 20;
 
 /*
+  Gift本体を1000件ずつ最後まで取得
+*/
+const GIFT_FETCH_SIZE = 1000;
+
+/*
   対象Giftの受取履歴だけを確認するため
   200件ずつ取得
 */
@@ -737,6 +742,88 @@ submitAddButton.addEventListener(
 
 
 /* =========================
+   レコチョクGiftを全件取得
+========================= */
+
+async function loadAllRecochokuGifts() {
+
+  const result = [];
+
+  let from = 0;
+
+
+  while (true) {
+
+    const to =
+      from +
+      GIFT_FETCH_SIZE -
+      1;
+
+
+    const {
+      data,
+      error
+    } =
+      await client
+        .from("gifts")
+        .select(
+          "id, gift_code, service"
+        )
+        .eq(
+          "service",
+          "recochoku"
+        )
+        .order(
+          "id",
+          {
+            ascending: true
+          }
+        )
+        .range(
+          from,
+          to
+        );
+
+
+    if (error) {
+
+      throw error;
+    }
+
+
+    const rows =
+      data || [];
+
+
+    result.push(
+      ...rows
+    );
+
+
+    /*
+      1000件未満なら
+      これが最後
+    */
+
+    if (
+      rows.length <
+      GIFT_FETCH_SIZE
+    ) {
+
+      break;
+    }
+
+
+    from +=
+      GIFT_FETCH_SIZE;
+  }
+
+
+  return result;
+}
+
+
+/* =========================
    対象レコチョクGiftの
    受取履歴だけ取得
 ========================= */
@@ -828,26 +915,20 @@ async function loadReceiptsForGifts(
 
 async function loadGifts() {
 
-  const {
-    data: gifts,
-    error
-  } =
-    await client
-      .from("gifts")
-      .select(
-        "id, gift_code, service"
-      )
-      .eq(
-        "service",
-        "recochoku"
-      )
-      .order(
-        "id",
-        { ascending: true }
-      );
+  let gifts;
 
 
-  if (error) {
+  /*
+    レコチョクGiftを
+    1000件ずつ最後まで取得
+  */
+
+  try {
+
+    gifts =
+      await loadAllRecochokuGifts();
+
+  } catch (error) {
 
     console.error(error);
 
@@ -863,6 +944,11 @@ async function loadGifts() {
   allGifts =
     gifts || [];
 
+
+  /*
+    今取得したレコチョクGiftの
+    受取履歴だけを200件ずつ確認
+  */
 
   try {
 
