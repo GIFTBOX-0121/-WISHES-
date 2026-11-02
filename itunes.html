@@ -508,13 +508,20 @@ document.getElementById("gift-input");
 const submitAddButton =
 document.getElementById("submit-add-button");
 
+
 const RECEIVED_PER_PAGE = 20;
+
+/*
+  Gift本体を1000件ずつ最後まで取得
+*/
+const GIFT_FETCH_SIZE = 1000;
 
 /*
   受取履歴を一度に大量照合しないため、
   iTunesのGift IDを200件ずつ確認する
 */
 const RECEIPT_ID_CHUNK = 200;
+
 
 let currentPage = 1;
 let allGifts = [];
@@ -811,6 +818,85 @@ async function copyText(text) {
 
 
 /* =========================
+   iTunes Giftを全件取得
+========================= */
+
+async function loadAllItunesGifts() {
+
+  const result = [];
+
+  let from = 0;
+
+
+  while (true) {
+
+    const to =
+      from + GIFT_FETCH_SIZE - 1;
+
+
+    const {
+      data,
+      error
+    } =
+      await client
+        .from("gifts")
+        .select(
+          "id, gift_code, service"
+        )
+        .eq(
+          "service",
+          "itunes"
+        )
+        .order(
+          "id",
+          {
+            ascending: true
+          }
+        )
+        .range(
+          from,
+          to
+        );
+
+
+    if (error) {
+
+      throw error;
+    }
+
+
+    const rows =
+      data || [];
+
+
+    result.push(
+      ...rows
+    );
+
+
+    /*
+      1000件未満なら最後
+    */
+
+    if (
+      rows.length <
+      GIFT_FETCH_SIZE
+    ) {
+
+      break;
+    }
+
+
+    from +=
+      GIFT_FETCH_SIZE;
+  }
+
+
+  return result;
+}
+
+
+/* =========================
    このiTunes Giftの
    受取履歴だけを取得
 ========================= */
@@ -835,7 +921,7 @@ async function loadReceiptsForGifts(gifts) {
 
 
   /*
-    200件ずつgift_receiptsと照合する
+    200件ずつgift_receiptsと照合
   */
 
   for (
@@ -896,28 +982,20 @@ async function loadReceiptsForGifts(gifts) {
 
 async function loadGifts() {
 
-  const {
-    data: gifts,
-    error
-  } =
-    await client
-      .from("gifts")
-      .select(
-        "id, gift_code, service"
-      )
-      .eq(
-        "service",
-        "itunes"
-      )
-      .order(
-        "id",
-        {
-          ascending: true
-        }
-      );
+  let gifts;
 
 
-  if (error) {
+  /*
+    iTunes Giftを
+    1000件ずつ最後まで取得
+  */
+
+  try {
+
+    gifts =
+      await loadAllItunesGifts();
+
+  } catch (error) {
 
     console.error(error);
 
@@ -935,11 +1013,8 @@ async function loadGifts() {
 
 
   /*
-    ★ここが今回の修正箇所
-
-    gift_receipts全体を取得せず、
-    今取得したiTunes GiftのIDだけを
-    200件ずつ照合する。
+    取得したiTunes GiftのIDだけを
+    200件ずつ受取履歴と照合
   */
 
   try {
@@ -965,8 +1040,8 @@ async function loadGifts() {
 
 
   /*
-    gift_receiptsに存在しないものだけが
-    本当の「未受け取り」
+    gift_receiptsに存在しないGiftだけが
+    本当の未受け取り
   */
 
   const unreceivedCount =
@@ -1203,11 +1278,6 @@ function renderGift(gift) {
         return;
       }
 
-
-      /*
-        今受け取ったGiftを
-        この画面上でも受取済みにする
-      */
 
       receivedIds.add(
         gift.id
